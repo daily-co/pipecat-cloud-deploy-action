@@ -1,6 +1,6 @@
 # Deploy to Pipecat Cloud — GitHub Action
 
-A GitHub Action that builds, pushes, and deploys your [Pipecat](https://github.com/pipecat-ai/pipecat) agent to [Pipecat Cloud](https://www.pipecat.ai/cloud). Use it in your CI/CD workflows to automate deployments whenever you push code.
+A GitHub Action that builds, pushes, and deploys your [Pipecat](https://github.com/pipecat-ai/pipecat) agent to [Pipecat Cloud](https://pipecat.daily.co). Use it in your CI/CD workflows to automate deployments whenever you push code.
 
 ## Features
 
@@ -26,7 +26,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      packages: write  # needed for GHCR push
+      packages: write # needed for GHCR push
     steps:
       - uses: actions/checkout@v4
 
@@ -61,11 +61,11 @@ If you build your image separately (or use another CI step), pass the fully-tagg
 
 ### Required
 
-| Input        | Description                                                                                                                                                        |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Input        | Description                                                                                                                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `api-key`    | Pipecat Cloud **Private** API key. Store as a [GitHub secret](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions). Must be a Private key, not a Public key. |
-| `agent-name` | Name of the agent to deploy.                                                                                                                                       |
-| `image`      | Docker image name. When `build` is enabled the action auto-appends the tag. When `build` is disabled, must include a tag (e.g. `my-image:v1.0`).                   |
+| `agent-name` | Name of the agent to deploy.                                                                                                                                                                                            |
+| `image`      | Docker image name. When `build` is enabled the action auto-appends the tag. When `build` is disabled, must include a tag (e.g. `my-image:v1.0`).                                                                        |
 
 ### Docker Build (optional)
 
@@ -162,7 +162,7 @@ These inputs are only used when `build` is set to `true`.
 
 ## Setup
 
-1. **Create a Pipecat Cloud Private API key** in the [Pipecat Cloud dashboard](https://console.pipecat.daily.co). Make sure to select **Private** (not Public) when creating the key.
+1. **Create a Pipecat Cloud Private API key** in the [Pipecat Cloud dashboard](https://pipecat.daily.co). Make sure to select **Private** (not Public) when creating the key.
 2. **Add the API key as a GitHub secret** named `PIPECAT_API_KEY` (or any name you prefer) in your repository settings under _Settings > Secrets and variables > Actions_.
 3. **Add the action** to your workflow file (see examples above).
 
