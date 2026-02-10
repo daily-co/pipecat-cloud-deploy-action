@@ -1,0 +1,30 @@
+{
+  "name": "pipecat-cloud-deploy-action",
+  "version": "1.0.0",
+  "description": "GitHub Action to build, push, and deploy to Pipecat Cloud",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build src/index.js -o dist --license licenses.txt"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pipecat-ai/pipecat-cloud.git",
+    "directory": "deploy-action"
+  },
+  "keywords": [
+    "pipecat",
+    "pipecat-cloud",
+    "deploy",
+    "github-action"
+  ],
+  "author": "Daily",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/exec": "^1.1.1",
+    "@actions/http-client": "^2.2.3"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3"
+  }
+}

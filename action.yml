@@ -1,0 +1,97 @@
+name: "Deploy to Pipecat Cloud"
+description: "Build, push, and deploy your Pipecat agent to Pipecat Cloud"
+author: "Daily"
+
+branding:
+  icon: "upload-cloud"
+  color: "blue"
+
+inputs:
+  # Required
+  api-key:
+    description: "Pipecat Cloud Private API key (not a Public key)"
+    required: true
+  agent-name:
+    description: "Name of the agent to deploy"
+    required: true
+  image:
+    description: >
+      Docker image name. When build is enabled, the action auto-appends the tag
+      (e.g. ghcr.io/my-org/my-bot). When build is disabled, must include a tag
+      (e.g. ghcr.io/my-org/my-bot:v1.2.3).
+    required: true
+  # Docker build options (only used when build is true)
+  build:
+    description: "Enable Docker build, tag, and push before deploying"
+    required: false
+    default: "false"
+  registry-username:
+    description: "Registry username for docker login"
+    required: false
+  registry-password:
+    description: "Registry password or token for docker login"
+    required: false
+  tag:
+    description: "Image tag (defaults to the git SHA)"
+    required: false
+    default: ""
+  dockerfile:
+    description: "Path to the Dockerfile"
+    required: false
+    default: "Dockerfile"
+  docker-context:
+    description: "Docker build context path"
+    required: false
+    default: "."
+  docker-build-args:
+    description: "Newline-separated Docker build args (e.g. ARG1=val1)"
+    required: false
+    default: ""
+
+  # Deploy options
+  image-credentials:
+    description: "Name of the image pull secret set in Pipecat Cloud"
+    required: false
+  secret-set:
+    description: "Name of the secret set for runtime secrets"
+    required: false
+  region:
+    description: "Deployment region (uses org default if omitted)"
+    required: false
+  min-agents:
+    description: "Minimum agents to keep warm"
+    required: false
+    default: "0"
+  max-agents:
+    description: "Maximum concurrent agents"
+    required: false
+    default: "10"
+  agent-profile:
+    description: "Agent profile name"
+    required: false
+  enable-managed-keys:
+    description: "Enable managed keys"
+    required: false
+    default: "false"
+  wait-for-ready:
+    description: "Whether to poll until deployment is ready"
+    required: false
+    default: "true"
+  wait-timeout:
+    description: "Max seconds to wait for deployment readiness"
+    required: false
+    default: "90"
+  api-url:
+    description: "Override the Pipecat Cloud API base URL"
+    required: false
+    default: "https://api.pipecat.daily.co"
+
+outputs:
+  image:
+    description: "The full image reference that was deployed (e.g. ghcr.io/org/bot:abc123)"
+  service-name:
+    description: "The deployed service/agent name"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
