@@ -1,13 +1,12 @@
 # Deploy to Pipecat Cloud — GitHub Action
 
-A GitHub Action that builds, pushes, and deploys your [Pipecat](https://github.com/pipecat-ai/pipecat) agent to [Pipecat Cloud](https://pipecat.daily.co). Use it in your CI/CD workflows to automate deployments whenever you push code.
+A GitHub Action for deploying [Pipecat](https://github.com/pipecat-ai/pipecat) agents to [Pipecat Cloud](https://pipecat.daily.co) using your own container registry. It handles Docker image building, pushing, and deployment in your CI/CD workflow.
 
-## Features
+## Do you need this action?
 
-- **Build & push** Docker images automatically, or deploy a pre-built image
-- **Zero Docker commands** — the action handles `docker build`, `docker login`, and `docker push` for you
-- **Readiness polling** — waits for the deployment to become available before marking the step as successful
-- **Full control** — configure scaling, regions, secrets, and more via action inputs
+**Most users don't.** Pipecat Cloud supports [cloud builds](https://docs.pipecat.ai/deployment/pipecat-cloud/guides/cloud-builds), which build your image server-side — no Docker, no registry, no extra infrastructure. Cloud builds can be triggered via the [CLI](https://docs.pipecat.ai/cli/cloud/build) or the [REST API](https://docs.pipecat.ai/deployment/pipecat-cloud/rest-reference/endpoint/build-create).
+
+**Use this action when** you need to build and push images to your own container registry (e.g. GHCR, Docker Hub, ECR) as part of your deployment pipeline.
 
 ## Quick Start
 
@@ -90,8 +89,8 @@ These inputs are only used when `build` is set to `true`.
 | `image-credentials`   |                                | Name of the image pull secret set in Pipecat Cloud.          |
 | `secret-set`          |                                | Name of the secret set for runtime secrets.                  |
 | `region`              |                                | Deployment region. Uses the organization default if omitted. |
-| `min-agents`          | `0`                            | Minimum agents to keep warm (0–50).                          |
-| `max-agents`          | `10`                           | Maximum concurrent agents (1–50).                            |
+| `min-agents`          | `0`                            | Minimum agents to keep warm (0-50).                          |
+| `max-agents`          | `10`                           | Maximum concurrent agents (1-50).                            |
 | `agent-profile`       |                                | Agent profile name.                                          |
 | `enable-managed-keys` | `false`                        | Enable managed keys.                                         |
 | `wait-for-ready`      | `true`                         | Poll until the deployment is ready.                          |
