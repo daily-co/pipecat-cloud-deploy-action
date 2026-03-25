@@ -277,6 +277,7 @@ class PipecatCloudAPI {
 
   /**
    * Poll build status until completion or timeout.
+   * Tolerates transient API errors (network blips, 500s) by retrying.
    * @param {string} buildId - Build ID to poll
    * @param {number} [maxDuration=600] - Maximum wait time in seconds
    * @param {number} [pollInterval=5] - Seconds between polls
@@ -285,6 +286,8 @@ class PipecatCloudAPI {
   async pollBuildStatus(buildId, maxDuration = 600, pollInterval = 5) {
     const startTime = Date.now();
     const terminalStatuses = new Set(["success", "failed", "timeout"]);
+    const maxConsecutiveErrors = 5;
+    let consecutiveErrors = 0;
 
     core.info(`Polling build status (timeout: ${maxDuration}s)...`);
 
@@ -299,7 +302,23 @@ class PipecatCloudAPI {
 
       await sleep(pollInterval * 1000);
 
-      const data = await this.buildGet(buildId);
+      let data;
+      try {
+        data = await this.buildGet(buildId);
+        consecutiveErrors = 0;
+      } catch (e) {
+        consecutiveErrors++;
+        core.warning(
+          `Build status poll failed (${consecutiveErrors}/${maxConsecutiveErrors}): ${e.message}`
+        );
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          throw new Error(
+            `Build status polling failed after ${maxConsecutiveErrors} consecutive errors: ${e.message}`
+          );
+        }
+        continue;
+      }
+
       if (!data) {
         return {
           success: false,

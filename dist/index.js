@@ -28822,6 +28822,7 @@ class PipecatCloudAPI {
 
   /**
    * Poll build status until completion or timeout.
+   * Tolerates transient API errors (network blips, 500s) by retrying.
    * @param {string} buildId - Build ID to poll
    * @param {number} [maxDuration=600] - Maximum wait time in seconds
    * @param {number} [pollInterval=5] - Seconds between polls
@@ -28830,6 +28831,8 @@ class PipecatCloudAPI {
   async pollBuildStatus(buildId, maxDuration = 600, pollInterval = 5) {
     const startTime = Date.now();
     const terminalStatuses = new Set(["success", "failed", "timeout"]);
+    const maxConsecutiveErrors = 5;
+    let consecutiveErrors = 0;
 
     core.info(`Polling build status (timeout: ${maxDuration}s)...`);
 
@@ -28844,7 +28847,23 @@ class PipecatCloudAPI {
 
       await sleep(pollInterval * 1000);
 
-      const data = await this.buildGet(buildId);
+      let data;
+      try {
+        data = await this.buildGet(buildId);
+        consecutiveErrors = 0;
+      } catch (e) {
+        consecutiveErrors++;
+        core.warning(
+          `Build status poll failed (${consecutiveErrors}/${maxConsecutiveErrors}): ${e.message}`
+        );
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          throw new Error(
+            `Build status polling failed after ${maxConsecutiveErrors} consecutive errors: ${e.message}`
+          );
+        }
+        continue;
+      }
+
       if (!data) {
         return {
           success: false,
@@ -28912,17 +28931,23 @@ const zlib = __nccwpck_require__(3106);
 const core = __nccwpck_require__(7484);
 const tar = __nccwpck_require__(6118);
 
-// Default patterns to exclude from build context
-const DEFAULT_EXCLUSIONS = new Set([
-  // Version control
-  ".git",
-  ".gitignore",
-  ".gitattributes",
-  // Environment and secrets
+// Security-sensitive patterns that are always excluded, even when .dockerignore
+// is present. Prevents accidental secret upload to S3.
+const SECURITY_EXCLUSIONS = new Set([
   ".env",
   ".env.*",
   "*.pem",
   "*.key",
+]);
+
+// Default patterns to exclude from build context (used when no .dockerignore)
+const DEFAULT_EXCLUSIONS = new Set([
+  // Security (duplicated from SECURITY_EXCLUSIONS for the no-dockerignore path)
+  ...SECURITY_EXCLUSIONS,
+  // Version control
+  ".git",
+  ".gitignore",
+  ".gitattributes",
   // Python artifacts
   "__pycache__",
   "*.pyc",
@@ -28934,7 +28959,6 @@ const DEFAULT_EXCLUSIONS = new Set([
   ".venv",
   "venv",
   "ENV",
-  "env",
   // Testing
   ".pytest_cache",
   ".coverage",
@@ -28976,6 +29000,17 @@ const DEFAULT_EXCLUSIONS = new Set([
 ]);
 
 const MAX_CONTEXT_SIZE = 500 * 1024 * 1024; // 500 MB
+const UPLOAD_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Compare two strings by Unicode code point order (not locale-dependent).
+ * Ensures deterministic sorting regardless of runner locale.
+ */
+function codePointCompare(a, b) {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
 
 /**
  * Check if a filename matches any exclusion pattern.
@@ -28994,12 +29029,14 @@ function matchesPattern(name, pattern) {
  * Check if a path should be excluded from the build context.
  */
 function shouldExclude(relPath, exclusions) {
-  const parts = relPath.split(path.sep);
+  // Normalize to forward slashes for consistent matching on all platforms
+  const normalized = relPath.replace(/\\/g, "/");
+  const parts = normalized.split("/");
   for (const pattern of exclusions) {
     for (const part of parts) {
       if (matchesPattern(part, pattern)) return true;
     }
-    if (matchesPattern(relPath, pattern)) return true;
+    if (matchesPattern(normalized, pattern)) return true;
   }
   return false;
 }
@@ -29029,23 +29066,28 @@ function loadDockerignore(contextDir) {
 
 /**
  * Get the set of exclusion patterns to use.
- * .dockerignore takes precedence over defaults if present.
+ * .dockerignore patterns are merged with security-sensitive defaults so
+ * secrets are never accidentally uploaded.
  */
 function getExclusions(contextDir) {
   const dockerignore = loadDockerignore(contextDir);
-  if (dockerignore !== null) return dockerignore;
+  if (dockerignore !== null) {
+    // Merge user patterns with security-sensitive defaults
+    for (const pattern of SECURITY_EXCLUSIONS) {
+      dockerignore.add(pattern);
+    }
+    return dockerignore;
+  }
   return new Set(DEFAULT_EXCLUSIONS);
 }
 
 /**
  * Recursively collect files from a directory, respecting exclusions.
+ * Tracks cumulative size and aborts early if MAX_CONTEXT_SIZE is exceeded.
  */
-function collectFiles(basePath, currentPath, exclusions) {
+function collectFiles(basePath, currentPath, exclusions, sizeTracker) {
   const results = [];
   const entries = fs.readdirSync(currentPath, { withFileTypes: true });
-
-  // Sort for determinism
-  entries.sort((a, b) => a.name.localeCompare(b.name));
 
   for (const entry of entries) {
     const fullPath = path.join(currentPath, entry.name);
@@ -29054,9 +29096,17 @@ function collectFiles(basePath, currentPath, exclusions) {
     if (shouldExclude(relPath, exclusions)) continue;
 
     if (entry.isDirectory()) {
-      results.push(...collectFiles(basePath, fullPath, exclusions));
+      results.push(...collectFiles(basePath, fullPath, exclusions, sizeTracker));
     } else if (entry.isFile()) {
-      results.push({ fullPath, arcName: relPath });
+      const stat = fs.statSync(fullPath);
+      sizeTracker.total += stat.size;
+      if (sizeTracker.total > MAX_CONTEXT_SIZE) {
+        const sizeMB = (sizeTracker.total / (1024 * 1024)).toFixed(1);
+        throw new Error(
+          `Build context too large: ${sizeMB}MB exceeds max ${MAX_CONTEXT_SIZE / (1024 * 1024)}MB. Use a .dockerignore to exclude unnecessary files.`
+        );
+      }
+      results.push({ fullPath, arcName: relPath, size: stat.size, mode: stat.mode });
     }
   }
 
@@ -29067,9 +29117,10 @@ function collectFiles(basePath, currentPath, exclusions) {
  * Create a deterministic tarball from the build context directory.
  *
  * Determinism is achieved by:
- * - Sorting files alphabetically
+ * - Sorting files by Unicode code point order (locale-independent)
  * - Setting mtime to Unix epoch (0)
  * - Normalizing permissions (uid=0, gid=0)
+ * - Normalizing path separators to forward slashes
  * - Using gzip with mtime=0
  *
  * @param {string} contextDir - Directory containing build context
@@ -29089,10 +29140,11 @@ async function createDeterministicTarball(contextDir, dockerfilePath) {
   }
 
   const exclusions = getExclusions(basePath);
-  const files = collectFiles(basePath, basePath, exclusions);
+  const sizeTracker = { total: 0 };
+  const files = collectFiles(basePath, basePath, exclusions, sizeTracker);
 
-  // Sort by relative path for determinism
-  files.sort((a, b) => a.arcName.localeCompare(b.arcName));
+  // Sort by Unicode code point order for locale-independent determinism
+  files.sort((a, b) => codePointCompare(a.arcName, b.arcName));
 
   // Create tar
   const pack = tar.pack();
@@ -29104,15 +29156,16 @@ async function createDeterministicTarball(contextDir, dockerfilePath) {
     pack.on("error", reject);
   });
 
-  let totalSize = 0;
   for (const file of files) {
     const content = fs.readFileSync(file.fullPath);
-    const stat = fs.statSync(file.fullPath);
-    const isExecutable = (stat.mode & 0o111) !== 0;
+    const isExecutable = (file.mode & 0o111) !== 0;
+
+    // Normalize path separators to forward slashes for cross-platform tar compat
+    const tarName = file.arcName.replace(/\\/g, "/");
 
     pack.entry(
       {
-        name: file.arcName,
+        name: tarName,
         size: content.length,
         mtime: new Date(0),
         uid: 0,
@@ -29123,20 +29176,10 @@ async function createDeterministicTarball(contextDir, dockerfilePath) {
       },
       content
     );
-
-    totalSize += content.length;
   }
 
   pack.finalize();
   const tarBuffer = await tarPromise;
-
-  // Check size limit
-  if (totalSize > MAX_CONTEXT_SIZE) {
-    const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
-    throw new Error(
-      `Build context too large: ${sizeMB}MB (max ${MAX_CONTEXT_SIZE / (1024 * 1024)}MB)`
-    );
-  }
 
   // Gzip and zero out the mtime field (bytes 4-7) for determinism
   const gzipped = zlib.gzipSync(tarBuffer);
@@ -29149,7 +29192,7 @@ async function createDeterministicTarball(contextDir, dockerfilePath) {
     `Build context: ${files.length} files, ${formatSize(gzipped.length)} compressed, hash=${contextHash}`
   );
 
-  return { tarball: gzipped, contextHash, fileCount: files.length, totalSize };
+  return { tarball: gzipped, contextHash, fileCount: files.length, totalSize: sizeTracker.total };
 }
 
 /**
@@ -29176,7 +29219,11 @@ async function uploadToS3(tarball, uploadUrl, uploadFields) {
   // Add file last (must be named "file" for S3 presigned POST)
   formData.append("file", new Blob([tarball], { type: "application/gzip" }), "context.tar.gz");
 
-  const response = await fetch(uploadUrl, { method: "POST", body: formData });
+  const response = await fetch(uploadUrl, {
+    method: "POST",
+    body: formData,
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+  });
 
   if (!response.ok && response.status !== 204) {
     const body = await response.text();
@@ -29198,6 +29245,7 @@ module.exports = {
   uploadToS3,
   formatSize,
   DEFAULT_EXCLUSIONS,
+  SECURITY_EXCLUSIONS,
 };
 
 
@@ -31132,7 +31180,9 @@ async function run() {
     const buildContext = core.getInput("build-context");
     const dockerfile = core.getInput("dockerfile");
     let buildId = core.getInput("build-id");
-    const buildTimeout = parseInt(core.getInput("build-timeout"), 10) || 600;
+    const rawBuildTimeout = core.getInput("build-timeout");
+    const parsedBuildTimeout = parseInt(rawBuildTimeout, 10);
+    const buildTimeout = isNaN(parsedBuildTimeout) ? 600 : parsedBuildTimeout;
 
     // ── Pre-built image inputs ─────────────────────────────────────────
     const image = core.getInput("image");
@@ -31158,6 +31208,18 @@ async function run() {
       );
     }
 
+    if (cloudBuildEnabled && image) {
+      throw new Error(
+        '"cloud-build" and "image" are mutually exclusive. Use one or the other.'
+      );
+    }
+
+    if (cloudBuildEnabled && buildId) {
+      throw new Error(
+        '"cloud-build" and "build-id" are mutually exclusive. Use one or the other.'
+      );
+    }
+
     if (image && !image.includes(":")) {
       throw new Error(
         'The "image" input must include a tag (e.g. my-image:v1.0).'
@@ -31170,128 +31232,132 @@ async function run() {
     // ── Cloud Build ────────────────────────────────────────────────────
     if (cloudBuildEnabled && !buildId) {
       core.startGroup("Pipecat Cloud Build");
-
-      // Create deterministic tarball
-      core.info("Creating build context...");
-      const buildCtx = await createDeterministicTarball(buildContext, dockerfile);
-
-      // Check cache
-      core.info("Checking build cache...");
       try {
-        const cachedBuilds = await api.buildList({
-          contextHash: buildCtx.contextHash,
-          region: region || undefined,
-          status: "success",
-          limit: 1,
-        });
+        // Create deterministic tarball
+        core.info("Creating build context...");
+        const buildCtx = await createDeterministicTarball(buildContext, dockerfile);
 
-        if (cachedBuilds?.builds?.length > 0) {
-          buildId = cachedBuilds.builds[0].id;
-          core.info(`Cache hit! Reusing build: ${buildId}`);
-          core.endGroup();
-        }
-      } catch (e) {
-        core.debug(`Cache check failed (non-fatal): ${e.message}`);
-      }
+        // Check cache
+        core.info("Checking build cache...");
+        try {
+          const cachedBuilds = await api.buildList({
+            contextHash: buildCtx.contextHash,
+            region: region || undefined,
+            status: "success",
+            limit: 1,
+          });
 
-      if (!buildId) {
-        // Get presigned upload URL
-        core.info("Requesting upload URL...");
-        const uploadData = await api.buildUploadUrl(region);
-
-        // Upload context to S3
-        core.info(`Uploading build context (${formatSize(buildCtx.tarball.length)})...`);
-        await uploadToS3(
-          buildCtx.tarball,
-          uploadData.uploadUrl,
-          uploadData.uploadFields
-        );
-        core.info("Upload complete");
-
-        // Create build
-        core.info("Starting cloud build...");
-        const buildResult = await api.buildCreate(
-          uploadData.uploadId,
-          region,
-          dockerfile
-        );
-
-        const buildData = buildResult.build || buildResult;
-        buildId = buildData.id;
-
-        // Check for server-side cache hit
-        if (buildResult.cached) {
-          core.info(`Server cache hit! Build ID: ${buildId}`);
-        } else {
-          core.info(`Build started: ${buildId}`);
-
-          // Poll for completion
-          const { success, build: finalBuild } = await api.pollBuildStatus(
-            buildId,
-            buildTimeout
-          );
-
-          if (!success) {
-            const errorMsg =
-              finalBuild.errorMessage || finalBuild.error || "Unknown error";
-            throw new Error(`Cloud build failed: ${errorMsg}`);
+          if (cachedBuilds?.builds?.length > 0) {
+            buildId = cachedBuilds.builds[0].id;
+            core.info(`Cache hit! Reusing build: ${buildId}`);
           }
-
-          const duration = finalBuild.buildDurationSeconds;
-          core.info(
-            `Build complete${duration ? ` (${duration}s)` : ""}: ${buildId}`
-          );
+        } catch (e) {
+          core.debug(`Cache check failed (non-fatal): ${e.message}`);
         }
 
+        if (!buildId) {
+          // Get presigned upload URL
+          core.info("Requesting upload URL...");
+          const uploadData = await api.buildUploadUrl(region);
+
+          // Upload context to S3
+          core.info(`Uploading build context (${formatSize(buildCtx.tarball.length)})...`);
+          await uploadToS3(
+            buildCtx.tarball,
+            uploadData.uploadUrl,
+            uploadData.uploadFields
+          );
+          core.info("Upload complete");
+
+          // Create build
+          core.info("Starting cloud build...");
+          const buildResult = await api.buildCreate(
+            uploadData.uploadId,
+            region,
+            dockerfile
+          );
+
+          const buildData = buildResult.build || buildResult;
+          buildId = buildData.id;
+
+          // Check for server-side cache hit
+          if (buildResult.cached) {
+            core.info(`Server cache hit! Build ID: ${buildId}`);
+          } else {
+            core.info(`Build started: ${buildId}`);
+
+            // Poll for completion
+            const { success, build: finalBuild } = await api.pollBuildStatus(
+              buildId,
+              buildTimeout
+            );
+
+            if (!success) {
+              const errorMsg =
+                finalBuild.errorMessage || finalBuild.error || "Unknown error";
+              throw new Error(`Cloud build failed: ${errorMsg}`);
+            }
+
+            const duration = finalBuild.buildDurationSeconds;
+            core.info(
+              `Build complete${duration ? ` (${duration}s)` : ""}: ${buildId}`
+            );
+          }
+        }
+      } finally {
         core.endGroup();
       }
     }
 
     // ── Deploy to Pipecat Cloud ────────────────────────────────────────
     core.startGroup("Deploy to Pipecat Cloud");
+    try {
+      // Check if agent already exists
+      core.info(`Checking if agent "${agentName}" already exists...`);
+      const existingAgent = await api.checkAgent(agentName);
+      const isUpdate = existingAgent !== null;
 
-    // Check if agent already exists
-    core.info(`Checking if agent "${agentName}" already exists...`);
-    const existingAgent = await api.checkAgent(agentName);
-    const isUpdate = existingAgent !== null;
+      if (isUpdate) {
+        core.info(`Agent "${agentName}" exists — updating deployment`);
+      } else {
+        core.info(`Agent "${agentName}" not found — creating new deployment`);
+      }
 
-    if (isUpdate) {
-      core.info(`Agent "${agentName}" exists — updating deployment`);
-    } else {
-      core.info(`Agent "${agentName}" not found — creating new deployment`);
+      // Build the deployment payload
+      const payload = removeEmptyValues({
+        serviceName: agentName,
+        // Use buildId for cloud builds, image for pre-built
+        ...(buildId
+          ? { buildId }
+          : { image, imagePullSecretSet: imageCredentials || undefined }),
+        secretSet: secretSet || undefined,
+        region: region || undefined,
+        autoScaling: {
+          minAgents: isNaN(minAgents) ? undefined : minAgents,
+          maxAgents: isNaN(maxAgents) ? undefined : maxAgents,
+        },
+        enableIntegratedKeysProxy: enableManagedKeys || undefined,
+        agentProfile: agentProfile || undefined,
+      });
+
+      // Deploy
+      const result = await api.deploy(payload, isUpdate);
+      core.info(
+        `Deployment ${isUpdate ? "updated" : "created"} successfully`
+      );
+      core.debug(`Deploy response: ${JSON.stringify(result, null, 2)}`);
+    } finally {
+      core.endGroup();
     }
-
-    // Build the deployment payload
-    const payload = removeEmptyValues({
-      serviceName: agentName,
-      // Use buildId for cloud builds, image for pre-built
-      ...(buildId
-        ? { buildId }
-        : { image, imagePullSecretSet: imageCredentials || undefined }),
-      secretSet: secretSet || undefined,
-      region: region || undefined,
-      autoScaling: {
-        minAgents: isNaN(minAgents) ? undefined : minAgents,
-        maxAgents: isNaN(maxAgents) ? undefined : maxAgents,
-      },
-      enableIntegratedKeysProxy: enableManagedKeys || undefined,
-      agentProfile: agentProfile || undefined,
-    });
-
-    // Deploy
-    const result = await api.deploy(payload, isUpdate);
-    core.info(
-      `Deployment ${isUpdate ? "updated" : "created"} successfully`
-    );
-    core.debug(`Deploy response: ${JSON.stringify(result, null, 2)}`);
-
-    core.endGroup();
 
     // ── Wait for readiness ─────────────────────────────────────────────
     if (waitForReady) {
       core.startGroup("Waiting for deployment readiness");
-      await api.pollForReady(agentName, waitTimeout);
-      core.endGroup();
+      try {
+        await api.pollForReady(agentName, waitTimeout);
+      } finally {
+        core.endGroup();
+      }
     } else {
       core.info("Skipping readiness check (wait-for-ready is false)");
     }
