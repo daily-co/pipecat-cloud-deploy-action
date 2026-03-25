@@ -3195,6 +3195,2903 @@ function copyFile(srcFile, destFile, force) {
 
 /***/ }),
 
+/***/ 3057:
+/***/ ((module) => {
+
+function isBuffer(value) {
+  return Buffer.isBuffer(value) || value instanceof Uint8Array
+}
+
+function isEncoding(encoding) {
+  return Buffer.isEncoding(encoding)
+}
+
+function alloc(size, fill, encoding) {
+  return Buffer.alloc(size, fill, encoding)
+}
+
+function allocUnsafe(size) {
+  return Buffer.allocUnsafe(size)
+}
+
+function allocUnsafeSlow(size) {
+  return Buffer.allocUnsafeSlow(size)
+}
+
+function byteLength(string, encoding) {
+  return Buffer.byteLength(string, encoding)
+}
+
+function compare(a, b) {
+  return Buffer.compare(a, b)
+}
+
+function concat(buffers, totalLength) {
+  return Buffer.concat(buffers, totalLength)
+}
+
+function copy(source, target, targetStart, start, end) {
+  return toBuffer(source).copy(target, targetStart, start, end)
+}
+
+function equals(a, b) {
+  return toBuffer(a).equals(b)
+}
+
+function fill(buffer, value, offset, end, encoding) {
+  return toBuffer(buffer).fill(value, offset, end, encoding)
+}
+
+function from(value, encodingOrOffset, length) {
+  return Buffer.from(value, encodingOrOffset, length)
+}
+
+function includes(buffer, value, byteOffset, encoding) {
+  return toBuffer(buffer).includes(value, byteOffset, encoding)
+}
+
+function indexOf(buffer, value, byfeOffset, encoding) {
+  return toBuffer(buffer).indexOf(value, byfeOffset, encoding)
+}
+
+function lastIndexOf(buffer, value, byteOffset, encoding) {
+  return toBuffer(buffer).lastIndexOf(value, byteOffset, encoding)
+}
+
+function swap16(buffer) {
+  return toBuffer(buffer).swap16()
+}
+
+function swap32(buffer) {
+  return toBuffer(buffer).swap32()
+}
+
+function swap64(buffer) {
+  return toBuffer(buffer).swap64()
+}
+
+function toBuffer(buffer) {
+  if (Buffer.isBuffer(buffer)) return buffer
+  return Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+}
+
+function toString(buffer, encoding, start, end) {
+  return toBuffer(buffer).toString(encoding, start, end)
+}
+
+function write(buffer, string, offset, length, encoding) {
+  return toBuffer(buffer).write(string, offset, length, encoding)
+}
+
+function readDoubleBE(buffer, offset) {
+  return toBuffer(buffer).readDoubleBE(offset)
+}
+
+function readDoubleLE(buffer, offset) {
+  return toBuffer(buffer).readDoubleLE(offset)
+}
+
+function readFloatBE(buffer, offset) {
+  return toBuffer(buffer).readFloatBE(offset)
+}
+
+function readFloatLE(buffer, offset) {
+  return toBuffer(buffer).readFloatLE(offset)
+}
+
+function readInt32BE(buffer, offset) {
+  return toBuffer(buffer).readInt32BE(offset)
+}
+
+function readInt32LE(buffer, offset) {
+  return toBuffer(buffer).readInt32LE(offset)
+}
+
+function readUInt32BE(buffer, offset) {
+  return toBuffer(buffer).readUInt32BE(offset)
+}
+
+function readUInt32LE(buffer, offset) {
+  return toBuffer(buffer).readUInt32LE(offset)
+}
+
+function writeDoubleBE(buffer, value, offset) {
+  return toBuffer(buffer).writeDoubleBE(value, offset)
+}
+
+function writeDoubleLE(buffer, value, offset) {
+  return toBuffer(buffer).writeDoubleLE(value, offset)
+}
+
+function writeFloatBE(buffer, value, offset) {
+  return toBuffer(buffer).writeFloatBE(value, offset)
+}
+
+function writeFloatLE(buffer, value, offset) {
+  return toBuffer(buffer).writeFloatLE(value, offset)
+}
+
+function writeInt32BE(buffer, value, offset) {
+  return toBuffer(buffer).writeInt32BE(value, offset)
+}
+
+function writeInt32LE(buffer, value, offset) {
+  return toBuffer(buffer).writeInt32LE(value, offset)
+}
+
+function writeUInt32BE(buffer, value, offset) {
+  return toBuffer(buffer).writeUInt32BE(value, offset)
+}
+
+function writeUInt32LE(buffer, value, offset) {
+  return toBuffer(buffer).writeUInt32LE(value, offset)
+}
+
+module.exports = {
+  isBuffer,
+  isEncoding,
+  alloc,
+  allocUnsafe,
+  allocUnsafeSlow,
+  byteLength,
+  compare,
+  concat,
+  copy,
+  equals,
+  fill,
+  from,
+  includes,
+  indexOf,
+  lastIndexOf,
+  swap16,
+  swap32,
+  swap64,
+  toBuffer,
+  toString,
+  write,
+  readDoubleBE,
+  readDoubleLE,
+  readFloatBE,
+  readFloatLE,
+  readInt32BE,
+  readInt32LE,
+  readUInt32BE,
+  readUInt32LE,
+  writeDoubleBE,
+  writeDoubleLE,
+  writeFloatBE,
+  writeFloatLE,
+  writeInt32BE,
+  writeInt32LE,
+  writeUInt32BE,
+  writeUInt32LE
+}
+
+
+/***/ }),
+
+/***/ 9580:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = __nccwpck_require__(4434)
+
+
+/***/ }),
+
+/***/ 3587:
+/***/ ((module) => {
+
+module.exports = class FixedFIFO {
+  constructor (hwm) {
+    if (!(hwm > 0) || ((hwm - 1) & hwm) !== 0) throw new Error('Max size for a FixedFIFO should be a power of two')
+    this.buffer = new Array(hwm)
+    this.mask = hwm - 1
+    this.top = 0
+    this.btm = 0
+    this.next = null
+  }
+
+  clear () {
+    this.top = this.btm = 0
+    this.next = null
+    this.buffer.fill(undefined)
+  }
+
+  push (data) {
+    if (this.buffer[this.top] !== undefined) return false
+    this.buffer[this.top] = data
+    this.top = (this.top + 1) & this.mask
+    return true
+  }
+
+  shift () {
+    const last = this.buffer[this.btm]
+    if (last === undefined) return undefined
+    this.buffer[this.btm] = undefined
+    this.btm = (this.btm + 1) & this.mask
+    return last
+  }
+
+  peek () {
+    return this.buffer[this.btm]
+  }
+
+  isEmpty () {
+    return this.buffer[this.btm] === undefined
+  }
+}
+
+
+/***/ }),
+
+/***/ 3867:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const FixedFIFO = __nccwpck_require__(3587)
+
+module.exports = class FastFIFO {
+  constructor (hwm) {
+    this.hwm = hwm || 16
+    this.head = new FixedFIFO(this.hwm)
+    this.tail = this.head
+    this.length = 0
+  }
+
+  clear () {
+    this.head = this.tail
+    this.head.clear()
+    this.length = 0
+  }
+
+  push (val) {
+    this.length++
+    if (!this.head.push(val)) {
+      const prev = this.head
+      this.head = prev.next = new FixedFIFO(2 * this.head.buffer.length)
+      this.head.push(val)
+    }
+  }
+
+  shift () {
+    if (this.length !== 0) this.length--
+    const val = this.tail.shift()
+    if (val === undefined && this.tail.next) {
+      const next = this.tail.next
+      this.tail.next = null
+      this.tail = next
+      return this.tail.shift()
+    }
+
+    return val
+  }
+
+  peek () {
+    const val = this.tail.peek()
+    if (val === undefined && this.tail.next) return this.tail.next.peek()
+    return val
+  }
+
+  isEmpty () {
+    return this.length === 0
+  }
+}
+
+
+/***/ }),
+
+/***/ 6204:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { EventEmitter } = __nccwpck_require__(9580)
+const STREAM_DESTROYED = new Error('Stream was destroyed')
+const PREMATURE_CLOSE = new Error('Premature close')
+
+const FIFO = __nccwpck_require__(3867)
+const TextDecoder = __nccwpck_require__(7934)
+
+// if we do a future major, expect queue microtask to be there always, for now a bit defensive
+const qmt =
+  typeof queueMicrotask === 'undefined' ? (fn) => global.process.nextTick(fn) : queueMicrotask
+
+// 29 bits used total (4 from shared, 14 from read, and 11 from write)
+const MAX = (1 << 29) - 1
+
+// Shared state
+const OPENING = 0b0001
+const PREDESTROYING = 0b0010
+const DESTROYING = 0b0100
+const DESTROYED = 0b1000
+
+const NOT_OPENING = MAX ^ OPENING
+const NOT_PREDESTROYING = MAX ^ PREDESTROYING
+
+// Read state (4 bit offset from shared state)
+const READ_ACTIVE = 0b00000000000001 << 4
+const READ_UPDATING = 0b00000000000010 << 4
+const READ_PRIMARY = 0b00000000000100 << 4
+const READ_QUEUED = 0b00000000001000 << 4
+const READ_RESUMED = 0b00000000010000 << 4
+const READ_PIPE_DRAINED = 0b00000000100000 << 4
+const READ_ENDING = 0b00000001000000 << 4
+const READ_EMIT_DATA = 0b00000010000000 << 4
+const READ_EMIT_READABLE = 0b00000100000000 << 4
+const READ_EMITTED_READABLE = 0b00001000000000 << 4
+const READ_DONE = 0b00010000000000 << 4
+const READ_NEXT_TICK = 0b00100000000000 << 4
+const READ_NEEDS_PUSH = 0b01000000000000 << 4
+const READ_READ_AHEAD = 0b10000000000000 << 4
+
+// Combined read state
+const READ_FLOWING = READ_RESUMED | READ_PIPE_DRAINED
+const READ_ACTIVE_AND_NEEDS_PUSH = READ_ACTIVE | READ_NEEDS_PUSH
+const READ_PRIMARY_AND_ACTIVE = READ_PRIMARY | READ_ACTIVE
+const READ_EMIT_READABLE_AND_QUEUED = READ_EMIT_READABLE | READ_QUEUED
+const READ_RESUMED_READ_AHEAD = READ_RESUMED | READ_READ_AHEAD
+
+const READ_NOT_ACTIVE = MAX ^ READ_ACTIVE
+const READ_NON_PRIMARY = MAX ^ READ_PRIMARY
+const READ_NON_PRIMARY_AND_PUSHED = MAX ^ (READ_PRIMARY | READ_NEEDS_PUSH)
+const READ_PUSHED = MAX ^ READ_NEEDS_PUSH
+const READ_PAUSED = MAX ^ READ_RESUMED
+const READ_NOT_QUEUED = MAX ^ (READ_QUEUED | READ_EMITTED_READABLE)
+const READ_NOT_ENDING = MAX ^ READ_ENDING
+const READ_PIPE_NOT_DRAINED = MAX ^ READ_FLOWING
+const READ_NOT_NEXT_TICK = MAX ^ READ_NEXT_TICK
+const READ_NOT_UPDATING = MAX ^ READ_UPDATING
+const READ_NO_READ_AHEAD = MAX ^ READ_READ_AHEAD
+const READ_PAUSED_NO_READ_AHEAD = MAX ^ READ_RESUMED_READ_AHEAD
+
+// Write state (18 bit offset, 4 bit offset from shared state and 14 from read state)
+const WRITE_ACTIVE = 0b00000000001 << 18
+const WRITE_UPDATING = 0b00000000010 << 18
+const WRITE_PRIMARY = 0b00000000100 << 18
+const WRITE_QUEUED = 0b00000001000 << 18
+const WRITE_UNDRAINED = 0b00000010000 << 18
+const WRITE_DONE = 0b00000100000 << 18
+const WRITE_EMIT_DRAIN = 0b00001000000 << 18
+const WRITE_NEXT_TICK = 0b00010000000 << 18
+const WRITE_WRITING = 0b00100000000 << 18
+const WRITE_FINISHING = 0b01000000000 << 18
+const WRITE_CORKED = 0b10000000000 << 18
+
+const WRITE_NOT_ACTIVE = MAX ^ (WRITE_ACTIVE | WRITE_WRITING)
+const WRITE_NON_PRIMARY = MAX ^ WRITE_PRIMARY
+const WRITE_NOT_FINISHING = MAX ^ (WRITE_ACTIVE | WRITE_FINISHING)
+const WRITE_DRAINED = MAX ^ WRITE_UNDRAINED
+const WRITE_NOT_QUEUED = MAX ^ WRITE_QUEUED
+const WRITE_NOT_NEXT_TICK = MAX ^ WRITE_NEXT_TICK
+const WRITE_NOT_UPDATING = MAX ^ WRITE_UPDATING
+const WRITE_NOT_CORKED = MAX ^ WRITE_CORKED
+
+// Combined shared state
+const ACTIVE = READ_ACTIVE | WRITE_ACTIVE
+const NOT_ACTIVE = MAX ^ ACTIVE
+const DONE = READ_DONE | WRITE_DONE
+const DESTROY_STATUS = DESTROYING | DESTROYED | PREDESTROYING
+const OPEN_STATUS = DESTROY_STATUS | OPENING
+const AUTO_DESTROY = DESTROY_STATUS | DONE
+const NON_PRIMARY = WRITE_NON_PRIMARY & READ_NON_PRIMARY
+const ACTIVE_OR_TICKING = WRITE_NEXT_TICK | READ_NEXT_TICK
+const TICKING = ACTIVE_OR_TICKING & NOT_ACTIVE
+const IS_OPENING = OPEN_STATUS | TICKING
+
+// Combined shared state and read state
+const READ_PRIMARY_STATUS = OPEN_STATUS | READ_ENDING | READ_DONE
+const READ_STATUS = OPEN_STATUS | READ_DONE | READ_QUEUED
+const READ_ENDING_STATUS = OPEN_STATUS | READ_ENDING | READ_QUEUED
+const READ_READABLE_STATUS = OPEN_STATUS | READ_EMIT_READABLE | READ_QUEUED | READ_EMITTED_READABLE
+const SHOULD_NOT_READ =
+  OPEN_STATUS | READ_ACTIVE | READ_ENDING | READ_DONE | READ_NEEDS_PUSH | READ_READ_AHEAD
+const READ_BACKPRESSURE_STATUS = DESTROY_STATUS | READ_ENDING | READ_DONE
+const READ_UPDATE_SYNC_STATUS = READ_UPDATING | OPEN_STATUS | READ_NEXT_TICK | READ_PRIMARY
+const READ_NEXT_TICK_OR_OPENING = READ_NEXT_TICK | OPENING
+
+// Combined write state
+const WRITE_PRIMARY_STATUS = OPEN_STATUS | WRITE_FINISHING | WRITE_DONE
+const WRITE_QUEUED_AND_UNDRAINED = WRITE_QUEUED | WRITE_UNDRAINED
+const WRITE_QUEUED_AND_ACTIVE = WRITE_QUEUED | WRITE_ACTIVE
+const WRITE_DRAIN_STATUS = WRITE_QUEUED | WRITE_UNDRAINED | OPEN_STATUS | WRITE_ACTIVE
+const WRITE_STATUS = OPEN_STATUS | WRITE_ACTIVE | WRITE_QUEUED | WRITE_CORKED
+const WRITE_PRIMARY_AND_ACTIVE = WRITE_PRIMARY | WRITE_ACTIVE
+const WRITE_ACTIVE_AND_WRITING = WRITE_ACTIVE | WRITE_WRITING
+const WRITE_FINISHING_STATUS = OPEN_STATUS | WRITE_FINISHING | WRITE_QUEUED_AND_ACTIVE | WRITE_DONE
+const WRITE_BACKPRESSURE_STATUS = WRITE_UNDRAINED | DESTROY_STATUS | WRITE_FINISHING | WRITE_DONE
+const WRITE_UPDATE_SYNC_STATUS = WRITE_UPDATING | OPEN_STATUS | WRITE_NEXT_TICK | WRITE_PRIMARY
+const WRITE_DROP_DATA = WRITE_FINISHING | WRITE_DONE | DESTROY_STATUS
+
+const asyncIterator = Symbol.asyncIterator || Symbol('asyncIterator')
+
+class WritableState {
+  constructor(
+    stream,
+    { highWaterMark = 16384, map = null, mapWritable, byteLength, byteLengthWritable } = {}
+  ) {
+    this.stream = stream
+    this.queue = new FIFO()
+    this.highWaterMark = highWaterMark
+    this.buffered = 0
+    this.error = null
+    this.pipeline = null
+    this.drains = null // if we add more seldomly used helpers we might them into a subobject so its a single ptr
+    this.byteLength = byteLengthWritable || byteLength || defaultByteLength
+    this.map = mapWritable || map
+    this.afterWrite = afterWrite.bind(this)
+    this.afterUpdateNextTick = updateWriteNT.bind(this)
+  }
+
+  get ending() {
+    return (this.stream._duplexState & WRITE_FINISHING) !== 0
+  }
+
+  get ended() {
+    return (this.stream._duplexState & WRITE_DONE) !== 0
+  }
+
+  push(data) {
+    if ((this.stream._duplexState & WRITE_DROP_DATA) !== 0) return false
+    if (this.map !== null) data = this.map(data)
+
+    this.buffered += this.byteLength(data)
+    this.queue.push(data)
+
+    if (this.buffered < this.highWaterMark) {
+      this.stream._duplexState |= WRITE_QUEUED
+      return true
+    }
+
+    this.stream._duplexState |= WRITE_QUEUED_AND_UNDRAINED
+    return false
+  }
+
+  shift() {
+    const data = this.queue.shift()
+
+    this.buffered -= this.byteLength(data)
+    if (this.buffered === 0) this.stream._duplexState &= WRITE_NOT_QUEUED
+
+    return data
+  }
+
+  end(data) {
+    if (typeof data === 'function') this.stream.once('finish', data)
+    else if (data !== undefined && data !== null) this.push(data)
+    this.stream._duplexState = (this.stream._duplexState | WRITE_FINISHING) & WRITE_NON_PRIMARY
+  }
+
+  autoBatch(data, cb) {
+    const buffer = []
+    const stream = this.stream
+
+    buffer.push(data)
+    while ((stream._duplexState & WRITE_STATUS) === WRITE_QUEUED_AND_ACTIVE) {
+      buffer.push(stream._writableState.shift())
+    }
+
+    if ((stream._duplexState & OPEN_STATUS) !== 0) return cb(null)
+    stream._writev(buffer, cb)
+  }
+
+  update() {
+    const stream = this.stream
+
+    stream._duplexState |= WRITE_UPDATING
+
+    do {
+      while ((stream._duplexState & WRITE_STATUS) === WRITE_QUEUED) {
+        const data = this.shift()
+        stream._duplexState |= WRITE_ACTIVE_AND_WRITING
+        stream._write(data, this.afterWrite)
+      }
+
+      if ((stream._duplexState & WRITE_PRIMARY_AND_ACTIVE) === 0) this.updateNonPrimary()
+    } while (this.continueUpdate() === true)
+
+    stream._duplexState &= WRITE_NOT_UPDATING
+  }
+
+  updateNonPrimary() {
+    const stream = this.stream
+
+    if ((stream._duplexState & WRITE_FINISHING_STATUS) === WRITE_FINISHING) {
+      stream._duplexState = stream._duplexState | WRITE_ACTIVE
+      stream._final(afterFinal.bind(this))
+      return
+    }
+
+    if ((stream._duplexState & DESTROY_STATUS) === DESTROYING) {
+      if ((stream._duplexState & ACTIVE_OR_TICKING) === 0) {
+        stream._duplexState |= ACTIVE
+        stream._destroy(afterDestroy.bind(this))
+      }
+      return
+    }
+
+    if ((stream._duplexState & IS_OPENING) === OPENING) {
+      stream._duplexState = (stream._duplexState | ACTIVE) & NOT_OPENING
+      stream._open(afterOpen.bind(this))
+    }
+  }
+
+  continueUpdate() {
+    if ((this.stream._duplexState & WRITE_NEXT_TICK) === 0) return false
+    this.stream._duplexState &= WRITE_NOT_NEXT_TICK
+    return true
+  }
+
+  updateCallback() {
+    if ((this.stream._duplexState & WRITE_UPDATE_SYNC_STATUS) === WRITE_PRIMARY) this.update()
+    else this.updateNextTick()
+  }
+
+  updateNextTick() {
+    if ((this.stream._duplexState & WRITE_NEXT_TICK) !== 0) return
+    this.stream._duplexState |= WRITE_NEXT_TICK
+    if ((this.stream._duplexState & WRITE_UPDATING) === 0) qmt(this.afterUpdateNextTick)
+  }
+}
+
+class ReadableState {
+  constructor(
+    stream,
+    { highWaterMark = 16384, map = null, mapReadable, byteLength, byteLengthReadable } = {}
+  ) {
+    this.stream = stream
+    this.queue = new FIFO()
+    this.highWaterMark = highWaterMark === 0 ? 1 : highWaterMark
+    this.buffered = 0
+    this.readAhead = highWaterMark > 0
+    this.error = null
+    this.pipeline = null
+    this.byteLength = byteLengthReadable || byteLength || defaultByteLength
+    this.map = mapReadable || map
+    this.pipeTo = null
+    this.afterRead = afterRead.bind(this)
+    this.afterUpdateNextTick = updateReadNT.bind(this)
+  }
+
+  get ending() {
+    return (this.stream._duplexState & READ_ENDING) !== 0
+  }
+
+  get ended() {
+    return (this.stream._duplexState & READ_DONE) !== 0
+  }
+
+  pipe(pipeTo, cb) {
+    if (this.pipeTo !== null) throw new Error('Can only pipe to one destination')
+    if (typeof cb !== 'function') cb = null
+
+    this.stream._duplexState |= READ_PIPE_DRAINED
+    this.pipeTo = pipeTo
+    this.pipeline = new Pipeline(this.stream, pipeTo, cb)
+
+    if (cb) this.stream.on('error', noop) // We already error handle this so supress crashes
+
+    if (isStreamx(pipeTo)) {
+      pipeTo._writableState.pipeline = this.pipeline
+      if (cb) pipeTo.on('error', noop) // We already error handle this so supress crashes
+      pipeTo.on('finish', this.pipeline.finished.bind(this.pipeline)) // TODO: just call finished from pipeTo itself
+    } else {
+      const onerror = this.pipeline.done.bind(this.pipeline, pipeTo)
+      const onclose = this.pipeline.done.bind(this.pipeline, pipeTo, null) // onclose has a weird bool arg
+      pipeTo.on('error', onerror)
+      pipeTo.on('close', onclose)
+      pipeTo.on('finish', this.pipeline.finished.bind(this.pipeline))
+    }
+
+    pipeTo.on('drain', afterDrain.bind(this))
+    this.stream.emit('piping', pipeTo)
+    pipeTo.emit('pipe', this.stream)
+  }
+
+  push(data) {
+    const stream = this.stream
+
+    if (data === null) {
+      this.highWaterMark = 0
+      stream._duplexState = (stream._duplexState | READ_ENDING) & READ_NON_PRIMARY_AND_PUSHED
+      return false
+    }
+
+    if (this.map !== null) {
+      data = this.map(data)
+      if (data === null) {
+        stream._duplexState &= READ_PUSHED
+        return this.buffered < this.highWaterMark
+      }
+    }
+
+    this.buffered += this.byteLength(data)
+    this.queue.push(data)
+
+    stream._duplexState = (stream._duplexState | READ_QUEUED) & READ_PUSHED
+
+    return this.buffered < this.highWaterMark
+  }
+
+  shift() {
+    const data = this.queue.shift()
+
+    this.buffered -= this.byteLength(data)
+    if (this.buffered === 0) this.stream._duplexState &= READ_NOT_QUEUED
+    return data
+  }
+
+  unshift(data) {
+    const pending = [this.map !== null ? this.map(data) : data]
+    while (this.buffered > 0) pending.push(this.shift())
+
+    for (let i = 0; i < pending.length - 1; i++) {
+      const data = pending[i]
+      this.buffered += this.byteLength(data)
+      this.queue.push(data)
+    }
+
+    this.push(pending[pending.length - 1])
+  }
+
+  read() {
+    const stream = this.stream
+
+    if ((stream._duplexState & READ_STATUS) === READ_QUEUED) {
+      const data = this.shift()
+      if (this.pipeTo !== null && this.pipeTo.write(data) === false)
+        stream._duplexState &= READ_PIPE_NOT_DRAINED
+      if ((stream._duplexState & READ_EMIT_DATA) !== 0) stream.emit('data', data)
+      return data
+    }
+
+    if (this.readAhead === false) {
+      stream._duplexState |= READ_READ_AHEAD
+      this.updateNextTick()
+    }
+
+    return null
+  }
+
+  drain() {
+    const stream = this.stream
+
+    while (
+      (stream._duplexState & READ_STATUS) === READ_QUEUED &&
+      (stream._duplexState & READ_FLOWING) !== 0
+    ) {
+      const data = this.shift()
+      if (this.pipeTo !== null && this.pipeTo.write(data) === false)
+        stream._duplexState &= READ_PIPE_NOT_DRAINED
+      if ((stream._duplexState & READ_EMIT_DATA) !== 0) stream.emit('data', data)
+    }
+  }
+
+  update() {
+    const stream = this.stream
+
+    stream._duplexState |= READ_UPDATING
+
+    do {
+      this.drain()
+
+      while (
+        this.buffered < this.highWaterMark &&
+        (stream._duplexState & SHOULD_NOT_READ) === READ_READ_AHEAD
+      ) {
+        stream._duplexState |= READ_ACTIVE_AND_NEEDS_PUSH
+        stream._read(this.afterRead)
+        this.drain()
+      }
+
+      if ((stream._duplexState & READ_READABLE_STATUS) === READ_EMIT_READABLE_AND_QUEUED) {
+        stream._duplexState |= READ_EMITTED_READABLE
+        stream.emit('readable')
+      }
+
+      if ((stream._duplexState & READ_PRIMARY_AND_ACTIVE) === 0) this.updateNonPrimary()
+    } while (this.continueUpdate() === true)
+
+    stream._duplexState &= READ_NOT_UPDATING
+  }
+
+  updateNonPrimary() {
+    const stream = this.stream
+
+    if ((stream._duplexState & READ_ENDING_STATUS) === READ_ENDING) {
+      stream._duplexState = (stream._duplexState | READ_DONE) & READ_NOT_ENDING
+      stream.emit('end')
+      if ((stream._duplexState & AUTO_DESTROY) === DONE) stream._duplexState |= DESTROYING
+      if (this.pipeTo !== null) this.pipeTo.end()
+    }
+
+    if ((stream._duplexState & DESTROY_STATUS) === DESTROYING) {
+      if ((stream._duplexState & ACTIVE_OR_TICKING) === 0) {
+        stream._duplexState |= ACTIVE
+        stream._destroy(afterDestroy.bind(this))
+      }
+      return
+    }
+
+    if ((stream._duplexState & IS_OPENING) === OPENING) {
+      stream._duplexState = (stream._duplexState | ACTIVE) & NOT_OPENING
+      stream._open(afterOpen.bind(this))
+    }
+  }
+
+  continueUpdate() {
+    if ((this.stream._duplexState & READ_NEXT_TICK) === 0) return false
+    this.stream._duplexState &= READ_NOT_NEXT_TICK
+    return true
+  }
+
+  updateCallback() {
+    if ((this.stream._duplexState & READ_UPDATE_SYNC_STATUS) === READ_PRIMARY) this.update()
+    else this.updateNextTick()
+  }
+
+  updateNextTickIfOpen() {
+    if ((this.stream._duplexState & READ_NEXT_TICK_OR_OPENING) !== 0) return
+    this.stream._duplexState |= READ_NEXT_TICK
+    if ((this.stream._duplexState & READ_UPDATING) === 0) qmt(this.afterUpdateNextTick)
+  }
+
+  updateNextTick() {
+    if ((this.stream._duplexState & READ_NEXT_TICK) !== 0) return
+    this.stream._duplexState |= READ_NEXT_TICK
+    if ((this.stream._duplexState & READ_UPDATING) === 0) qmt(this.afterUpdateNextTick)
+  }
+}
+
+class TransformState {
+  constructor(stream) {
+    this.data = null
+    this.afterTransform = afterTransform.bind(stream)
+    this.afterFinal = null
+  }
+}
+
+class Pipeline {
+  constructor(src, dst, cb) {
+    this.from = src
+    this.to = dst
+    this.afterPipe = cb
+    this.error = null
+    this.pipeToFinished = false
+  }
+
+  finished() {
+    this.pipeToFinished = true
+  }
+
+  done(stream, err) {
+    if (err) this.error = err
+
+    if (stream === this.to) {
+      this.to = null
+
+      if (this.from !== null) {
+        if ((this.from._duplexState & READ_DONE) === 0 || !this.pipeToFinished) {
+          this.from.destroy(this.error || new Error('Writable stream closed prematurely'))
+        }
+        return
+      }
+    }
+
+    if (stream === this.from) {
+      this.from = null
+
+      if (this.to !== null) {
+        if ((stream._duplexState & READ_DONE) === 0) {
+          this.to.destroy(this.error || new Error('Readable stream closed before ending'))
+        }
+        return
+      }
+    }
+
+    if (this.afterPipe !== null) this.afterPipe(this.error)
+    this.to = this.from = this.afterPipe = null
+  }
+}
+
+function afterDrain() {
+  this.stream._duplexState |= READ_PIPE_DRAINED
+  this.updateCallback()
+}
+
+function afterFinal(err) {
+  const stream = this.stream
+  if (err) stream.destroy(err)
+  if ((stream._duplexState & DESTROY_STATUS) === 0) {
+    stream._duplexState |= WRITE_DONE
+    stream.emit('finish')
+  }
+  if ((stream._duplexState & AUTO_DESTROY) === DONE) {
+    stream._duplexState |= DESTROYING
+  }
+
+  stream._duplexState &= WRITE_NOT_FINISHING
+
+  // no need to wait the extra tick here, so we short circuit that
+  if ((stream._duplexState & WRITE_UPDATING) === 0) this.update()
+  else this.updateNextTick()
+}
+
+function afterDestroy(err) {
+  const stream = this.stream
+
+  if (!err && this.error !== STREAM_DESTROYED) err = this.error
+  if (err) stream.emit('error', err)
+  stream._duplexState |= DESTROYED
+  stream.emit('close')
+
+  const rs = stream._readableState
+  const ws = stream._writableState
+
+  if (rs !== null && rs.pipeline !== null) rs.pipeline.done(stream, err)
+
+  if (ws !== null) {
+    while (ws.drains !== null && ws.drains.length > 0) ws.drains.shift().resolve(false)
+    if (ws.pipeline !== null) ws.pipeline.done(stream, err)
+  }
+}
+
+function afterWrite(err) {
+  const stream = this.stream
+
+  if (err) stream.destroy(err)
+  stream._duplexState &= WRITE_NOT_ACTIVE
+
+  if (this.drains !== null) tickDrains(this.drains)
+
+  if ((stream._duplexState & WRITE_DRAIN_STATUS) === WRITE_UNDRAINED) {
+    stream._duplexState &= WRITE_DRAINED
+    if ((stream._duplexState & WRITE_EMIT_DRAIN) === WRITE_EMIT_DRAIN) {
+      stream.emit('drain')
+    }
+  }
+
+  this.updateCallback()
+}
+
+function afterRead(err) {
+  if (err) this.stream.destroy(err)
+  this.stream._duplexState &= READ_NOT_ACTIVE
+  if (this.readAhead === false && (this.stream._duplexState & READ_RESUMED) === 0)
+    this.stream._duplexState &= READ_NO_READ_AHEAD
+  this.updateCallback()
+}
+
+function updateReadNT() {
+  if ((this.stream._duplexState & READ_UPDATING) === 0) {
+    this.stream._duplexState &= READ_NOT_NEXT_TICK
+    this.update()
+  }
+}
+
+function updateWriteNT() {
+  if ((this.stream._duplexState & WRITE_UPDATING) === 0) {
+    this.stream._duplexState &= WRITE_NOT_NEXT_TICK
+    this.update()
+  }
+}
+
+function tickDrains(drains) {
+  for (let i = 0; i < drains.length; i++) {
+    // drains.writes are monotonic, so if one is 0 its always the first one
+    if (--drains[i].writes === 0) {
+      drains.shift().resolve(true)
+      i--
+    }
+  }
+}
+
+function afterOpen(err) {
+  const stream = this.stream
+
+  if (err) stream.destroy(err)
+
+  if ((stream._duplexState & DESTROYING) === 0) {
+    if ((stream._duplexState & READ_PRIMARY_STATUS) === 0) stream._duplexState |= READ_PRIMARY
+    if ((stream._duplexState & WRITE_PRIMARY_STATUS) === 0) stream._duplexState |= WRITE_PRIMARY
+    stream.emit('open')
+  }
+
+  stream._duplexState &= NOT_ACTIVE
+
+  if (stream._writableState !== null) {
+    stream._writableState.updateCallback()
+  }
+
+  if (stream._readableState !== null) {
+    stream._readableState.updateCallback()
+  }
+}
+
+function afterTransform(err, data) {
+  if (data !== undefined && data !== null) this.push(data)
+  this._writableState.afterWrite(err)
+}
+
+function newListener(name) {
+  if (this._readableState !== null) {
+    if (name === 'data') {
+      this._duplexState |= READ_EMIT_DATA | READ_RESUMED_READ_AHEAD
+      this._readableState.updateNextTick()
+    }
+    if (name === 'readable') {
+      this._duplexState |= READ_EMIT_READABLE
+      this._readableState.updateNextTick()
+    }
+  }
+
+  if (this._writableState !== null) {
+    if (name === 'drain') {
+      this._duplexState |= WRITE_EMIT_DRAIN
+      this._writableState.updateNextTick()
+    }
+  }
+}
+
+class Stream extends EventEmitter {
+  constructor(opts) {
+    super()
+
+    this._duplexState = 0
+    this._readableState = null
+    this._writableState = null
+
+    if (opts) {
+      if (opts.open) this._open = opts.open
+      if (opts.destroy) this._destroy = opts.destroy
+      if (opts.predestroy) this._predestroy = opts.predestroy
+      if (opts.signal) {
+        opts.signal.addEventListener('abort', abort.bind(this))
+      }
+    }
+
+    this.on('newListener', newListener)
+  }
+
+  _open(cb) {
+    cb(null)
+  }
+
+  _destroy(cb) {
+    cb(null)
+  }
+
+  _predestroy() {
+    // does nothing
+  }
+
+  get readable() {
+    return this._readableState !== null ? true : undefined
+  }
+
+  get writable() {
+    return this._writableState !== null ? true : undefined
+  }
+
+  get destroyed() {
+    return (this._duplexState & DESTROYED) !== 0
+  }
+
+  get destroying() {
+    return (this._duplexState & DESTROY_STATUS) !== 0
+  }
+
+  destroy(err) {
+    if ((this._duplexState & DESTROY_STATUS) === 0) {
+      if (!err) err = STREAM_DESTROYED
+      this._duplexState = (this._duplexState | DESTROYING) & NON_PRIMARY
+
+      if (this._readableState !== null) {
+        this._readableState.highWaterMark = 0
+        this._readableState.error = err
+      }
+      if (this._writableState !== null) {
+        this._writableState.highWaterMark = 0
+        this._writableState.error = err
+      }
+
+      this._duplexState |= PREDESTROYING
+      this._predestroy()
+      this._duplexState &= NOT_PREDESTROYING
+
+      if (this._readableState !== null) this._readableState.updateNextTick()
+      if (this._writableState !== null) this._writableState.updateNextTick()
+    }
+  }
+}
+
+class Readable extends Stream {
+  constructor(opts) {
+    super(opts)
+
+    this._duplexState |= OPENING | WRITE_DONE | READ_READ_AHEAD
+    this._readableState = new ReadableState(this, opts)
+
+    if (opts) {
+      if (this._readableState.readAhead === false) this._duplexState &= READ_NO_READ_AHEAD
+      if (opts.read) this._read = opts.read
+      if (opts.eagerOpen) this._readableState.updateNextTick()
+      if (opts.encoding) this.setEncoding(opts.encoding)
+    }
+  }
+
+  setEncoding(encoding) {
+    const dec = new TextDecoder(encoding)
+    const map = this._readableState.map || echo
+    this._readableState.map = mapOrSkip
+    return this
+
+    function mapOrSkip(data) {
+      const next = dec.push(data)
+      return next === '' && (data.byteLength !== 0 || dec.remaining > 0) ? null : map(next)
+    }
+  }
+
+  _read(cb) {
+    cb(null)
+  }
+
+  pipe(dest, cb) {
+    this._readableState.updateNextTick()
+    this._readableState.pipe(dest, cb)
+    return dest
+  }
+
+  read() {
+    this._readableState.updateNextTick()
+    return this._readableState.read()
+  }
+
+  push(data) {
+    this._readableState.updateNextTickIfOpen()
+    return this._readableState.push(data)
+  }
+
+  unshift(data) {
+    this._readableState.updateNextTickIfOpen()
+    return this._readableState.unshift(data)
+  }
+
+  resume() {
+    this._duplexState |= READ_RESUMED_READ_AHEAD
+    this._readableState.updateNextTick()
+    return this
+  }
+
+  pause() {
+    this._duplexState &=
+      this._readableState.readAhead === false ? READ_PAUSED_NO_READ_AHEAD : READ_PAUSED
+    return this
+  }
+
+  static _fromAsyncIterator(ite, opts) {
+    let destroy
+
+    const rs = new Readable({
+      ...opts,
+      read(cb) {
+        ite.next().then(push).then(cb.bind(null, null)).catch(cb)
+      },
+      predestroy() {
+        destroy = ite.return()
+      },
+      destroy(cb) {
+        if (!destroy) return cb(null)
+        destroy.then(cb.bind(null, null)).catch(cb)
+      }
+    })
+
+    return rs
+
+    function push(data) {
+      if (data.done) rs.push(null)
+      else rs.push(data.value)
+    }
+  }
+
+  static from(data, opts) {
+    if (isReadStreamx(data)) return data
+    if (data[asyncIterator]) return this._fromAsyncIterator(data[asyncIterator](), opts)
+    if (!Array.isArray(data)) data = data === undefined ? [] : [data]
+
+    let i = 0
+    return new Readable({
+      ...opts,
+      read(cb) {
+        this.push(i === data.length ? null : data[i++])
+        cb(null)
+      }
+    })
+  }
+
+  static isBackpressured(rs) {
+    return (
+      (rs._duplexState & READ_BACKPRESSURE_STATUS) !== 0 ||
+      rs._readableState.buffered >= rs._readableState.highWaterMark
+    )
+  }
+
+  static isPaused(rs) {
+    return (rs._duplexState & READ_RESUMED) === 0
+  }
+
+  [asyncIterator]() {
+    const stream = this
+
+    let error = null
+    let promiseResolve = null
+    let promiseReject = null
+
+    this.on('error', (err) => {
+      error = err
+    })
+    this.on('readable', onreadable)
+    this.on('close', onclose)
+
+    return {
+      [asyncIterator]() {
+        return this
+      },
+      next() {
+        return new Promise(function (resolve, reject) {
+          promiseResolve = resolve
+          promiseReject = reject
+          const data = stream.read()
+          if (data !== null) ondata(data)
+          else if ((stream._duplexState & DESTROYED) !== 0) ondata(null)
+        })
+      },
+      return() {
+        return destroy(null)
+      },
+      throw(err) {
+        return destroy(err)
+      }
+    }
+
+    function onreadable() {
+      if (promiseResolve !== null) ondata(stream.read())
+    }
+
+    function onclose() {
+      if (promiseResolve !== null) ondata(null)
+    }
+
+    function ondata(data) {
+      if (promiseReject === null) return
+      if (error) promiseReject(error)
+      else if (data === null && (stream._duplexState & READ_DONE) === 0)
+        promiseReject(STREAM_DESTROYED)
+      else promiseResolve({ value: data, done: data === null })
+      promiseReject = promiseResolve = null
+    }
+
+    function destroy(err) {
+      stream.destroy(err)
+      return new Promise((resolve, reject) => {
+        if (stream._duplexState & DESTROYED) return resolve({ value: undefined, done: true })
+        stream.once('close', function () {
+          if (err) reject(err)
+          else resolve({ value: undefined, done: true })
+        })
+      })
+    }
+  }
+}
+
+class Writable extends Stream {
+  constructor(opts) {
+    super(opts)
+
+    this._duplexState |= OPENING | READ_DONE
+    this._writableState = new WritableState(this, opts)
+
+    if (opts) {
+      if (opts.writev) this._writev = opts.writev
+      if (opts.write) this._write = opts.write
+      if (opts.final) this._final = opts.final
+      if (opts.eagerOpen) this._writableState.updateNextTick()
+    }
+  }
+
+  cork() {
+    this._duplexState |= WRITE_CORKED
+  }
+
+  uncork() {
+    this._duplexState &= WRITE_NOT_CORKED
+    this._writableState.updateNextTick()
+  }
+
+  _writev(batch, cb) {
+    cb(null)
+  }
+
+  _write(data, cb) {
+    this._writableState.autoBatch(data, cb)
+  }
+
+  _final(cb) {
+    cb(null)
+  }
+
+  static isBackpressured(ws) {
+    return (ws._duplexState & WRITE_BACKPRESSURE_STATUS) !== 0
+  }
+
+  static drained(ws) {
+    if (ws.destroyed) return Promise.resolve(false)
+    const state = ws._writableState
+    const pending = isWritev(ws) ? Math.min(1, state.queue.length) : state.queue.length
+    const writes = pending + (ws._duplexState & WRITE_WRITING ? 1 : 0)
+    if (writes === 0) return Promise.resolve(true)
+    if (state.drains === null) state.drains = []
+    return new Promise((resolve) => {
+      state.drains.push({ writes, resolve })
+    })
+  }
+
+  write(data) {
+    this._writableState.updateNextTick()
+    return this._writableState.push(data)
+  }
+
+  end(data) {
+    this._writableState.updateNextTick()
+    this._writableState.end(data)
+    return this
+  }
+}
+
+class Duplex extends Readable {
+  // and Writable
+  constructor(opts) {
+    super(opts)
+
+    this._duplexState = OPENING | (this._duplexState & READ_READ_AHEAD)
+    this._writableState = new WritableState(this, opts)
+
+    if (opts) {
+      if (opts.writev) this._writev = opts.writev
+      if (opts.write) this._write = opts.write
+      if (opts.final) this._final = opts.final
+    }
+  }
+
+  cork() {
+    this._duplexState |= WRITE_CORKED
+  }
+
+  uncork() {
+    this._duplexState &= WRITE_NOT_CORKED
+    this._writableState.updateNextTick()
+  }
+
+  _writev(batch, cb) {
+    cb(null)
+  }
+
+  _write(data, cb) {
+    this._writableState.autoBatch(data, cb)
+  }
+
+  _final(cb) {
+    cb(null)
+  }
+
+  write(data) {
+    this._writableState.updateNextTick()
+    return this._writableState.push(data)
+  }
+
+  end(data) {
+    this._writableState.updateNextTick()
+    this._writableState.end(data)
+    return this
+  }
+}
+
+class Transform extends Duplex {
+  constructor(opts) {
+    super(opts)
+    this._transformState = new TransformState(this)
+
+    if (opts) {
+      if (opts.transform) this._transform = opts.transform
+      if (opts.flush) this._flush = opts.flush
+    }
+  }
+
+  _write(data, cb) {
+    if (this._readableState.buffered >= this._readableState.highWaterMark) {
+      this._transformState.data = data
+    } else {
+      this._transform(data, this._transformState.afterTransform)
+    }
+  }
+
+  _read(cb) {
+    if (this._transformState.data !== null) {
+      const data = this._transformState.data
+      this._transformState.data = null
+      cb(null)
+      this._transform(data, this._transformState.afterTransform)
+    } else {
+      cb(null)
+    }
+  }
+
+  destroy(err) {
+    super.destroy(err)
+    if (this._transformState.data !== null) {
+      this._transformState.data = null
+      this._transformState.afterTransform()
+    }
+  }
+
+  _transform(data, cb) {
+    cb(null, data)
+  }
+
+  _flush(cb) {
+    cb(null)
+  }
+
+  _final(cb) {
+    this._transformState.afterFinal = cb
+    this._flush(transformAfterFlush.bind(this))
+  }
+}
+
+class PassThrough extends Transform {}
+
+function transformAfterFlush(err, data) {
+  const cb = this._transformState.afterFinal
+  if (err) return cb(err)
+  if (data !== null && data !== undefined) this.push(data)
+  this.push(null)
+  cb(null)
+}
+
+function pipelinePromise(...streams) {
+  return new Promise((resolve, reject) => {
+    return pipeline(...streams, (err) => {
+      if (err) return reject(err)
+      resolve()
+    })
+  })
+}
+
+function pipeline(stream, ...streams) {
+  const all = Array.isArray(stream) ? [...stream, ...streams] : [stream, ...streams]
+  const done = all.length && typeof all[all.length - 1] === 'function' ? all.pop() : null
+
+  if (all.length < 2) throw new Error('Pipeline requires at least 2 streams')
+
+  let src = all[0]
+  let dest = null
+  let error = null
+
+  for (let i = 1; i < all.length; i++) {
+    dest = all[i]
+
+    if (isStreamx(src)) {
+      src.pipe(dest, onerror)
+    } else {
+      errorHandle(src, true, i > 1, onerror)
+      src.pipe(dest)
+    }
+
+    src = dest
+  }
+
+  if (done) {
+    let fin = false
+
+    const autoDestroy =
+      isStreamx(dest) || !!(dest._writableState && dest._writableState.autoDestroy)
+
+    dest.on('error', (err) => {
+      if (error === null) error = err
+    })
+
+    dest.on('finish', () => {
+      fin = true
+      if (!autoDestroy) done(error)
+    })
+
+    if (autoDestroy) {
+      dest.on('close', () => done(error || (fin ? null : PREMATURE_CLOSE)))
+    }
+  }
+
+  return dest
+
+  function errorHandle(s, rd, wr, onerror) {
+    s.on('error', onerror)
+    s.on('close', onclose)
+
+    function onclose() {
+      if (rd && s._readableState && !s._readableState.ended) return onerror(PREMATURE_CLOSE)
+      if (wr && s._writableState && !s._writableState.ended) return onerror(PREMATURE_CLOSE)
+    }
+  }
+
+  function onerror(err) {
+    if (!err || error) return
+    error = err
+
+    for (const s of all) {
+      s.destroy(err)
+    }
+  }
+}
+
+function echo(s) {
+  return s
+}
+
+function isStream(stream) {
+  return !!stream._readableState || !!stream._writableState
+}
+
+function isStreamx(stream) {
+  return typeof stream._duplexState === 'number' && isStream(stream)
+}
+
+function isEnding(stream) {
+  return !!stream._readableState && stream._readableState.ending
+}
+
+function isEnded(stream) {
+  return !!stream._readableState && stream._readableState.ended
+}
+
+function isFinishing(stream) {
+  return !!stream._writableState && stream._writableState.ending
+}
+
+function isFinished(stream) {
+  return !!stream._writableState && stream._writableState.ended
+}
+
+function getStreamError(stream, opts = {}) {
+  const err =
+    (stream._readableState && stream._readableState.error) ||
+    (stream._writableState && stream._writableState.error)
+
+  // avoid implicit errors by default
+  return !opts.all && err === STREAM_DESTROYED ? null : err
+}
+
+function isReadStreamx(stream) {
+  return isStreamx(stream) && stream.readable
+}
+
+function isDisturbed(stream) {
+  return (
+    (stream._duplexState & OPENING) !== OPENING ||
+    (stream._duplexState & DESTROYING) === DESTROYING ||
+    (stream._duplexState & ACTIVE_OR_TICKING) !== 0
+  )
+}
+
+function isTypedArray(data) {
+  return typeof data === 'object' && data !== null && typeof data.byteLength === 'number'
+}
+
+function defaultByteLength(data) {
+  return isTypedArray(data) ? data.byteLength : 1024
+}
+
+function noop() {}
+
+function abort() {
+  this.destroy(new Error('Stream aborted.'))
+}
+
+function isWritev(s) {
+  return s._writev !== Writable.prototype._writev && s._writev !== Duplex.prototype._writev
+}
+
+module.exports = {
+  pipeline,
+  pipelinePromise,
+  isStream,
+  isStreamx,
+  isEnding,
+  isEnded,
+  isFinishing,
+  isFinished,
+  isDisturbed,
+  getStreamError,
+  Stream,
+  Writable,
+  Readable,
+  Duplex,
+  Transform,
+  // Export PassThrough for compatibility with Node.js core's stream module
+  PassThrough
+}
+
+
+/***/ }),
+
+/***/ 775:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const constants = { // just for envs without fs
+  S_IFMT: 61440,
+  S_IFDIR: 16384,
+  S_IFCHR: 8192,
+  S_IFBLK: 24576,
+  S_IFIFO: 4096,
+  S_IFLNK: 40960
+}
+
+try {
+  module.exports = (__nccwpck_require__(9896).constants) || constants
+} catch {
+  module.exports = constants
+}
+
+
+/***/ }),
+
+/***/ 5763:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { Writable, Readable, getStreamError } = __nccwpck_require__(6204)
+const FIFO = __nccwpck_require__(3867)
+const b4a = __nccwpck_require__(3057)
+const headers = __nccwpck_require__(8428)
+
+const EMPTY = b4a.alloc(0)
+
+class BufferList {
+  constructor () {
+    this.buffered = 0
+    this.shifted = 0
+    this.queue = new FIFO()
+
+    this._offset = 0
+  }
+
+  push (buffer) {
+    this.buffered += buffer.byteLength
+    this.queue.push(buffer)
+  }
+
+  shiftFirst (size) {
+    return this._buffered === 0 ? null : this._next(size)
+  }
+
+  shift (size) {
+    if (size > this.buffered) return null
+    if (size === 0) return EMPTY
+
+    let chunk = this._next(size)
+
+    if (size === chunk.byteLength) return chunk // likely case
+
+    const chunks = [chunk]
+
+    while ((size -= chunk.byteLength) > 0) {
+      chunk = this._next(size)
+      chunks.push(chunk)
+    }
+
+    return b4a.concat(chunks)
+  }
+
+  _next (size) {
+    const buf = this.queue.peek()
+    const rem = buf.byteLength - this._offset
+
+    if (size >= rem) {
+      const sub = this._offset ? buf.subarray(this._offset, buf.byteLength) : buf
+      this.queue.shift()
+      this._offset = 0
+      this.buffered -= rem
+      this.shifted += rem
+      return sub
+    }
+
+    this.buffered -= size
+    this.shifted += size
+
+    return buf.subarray(this._offset, (this._offset += size))
+  }
+}
+
+class Source extends Readable {
+  constructor (self, header, offset) {
+    super()
+
+    this.header = header
+    this.offset = offset
+
+    this._parent = self
+  }
+
+  _read (cb) {
+    if (this.header.size === 0) {
+      this.push(null)
+    }
+    if (this._parent._stream === this) {
+      this._parent._update()
+    }
+    cb(null)
+  }
+
+  _predestroy () {
+    this._parent.destroy(getStreamError(this))
+  }
+
+  _detach () {
+    if (this._parent._stream === this) {
+      this._parent._stream = null
+      this._parent._missing = overflow(this.header.size)
+      this._parent._update()
+    }
+  }
+
+  _destroy (cb) {
+    this._detach()
+    cb(null)
+  }
+}
+
+class Extract extends Writable {
+  constructor (opts) {
+    super(opts)
+
+    if (!opts) opts = {}
+
+    this._buffer = new BufferList()
+    this._offset = 0
+    this._header = null
+    this._stream = null
+    this._missing = 0
+    this._longHeader = false
+    this._callback = noop
+    this._locked = false
+    this._finished = false
+    this._pax = null
+    this._paxGlobal = null
+    this._gnuLongPath = null
+    this._gnuLongLinkPath = null
+    this._filenameEncoding = opts.filenameEncoding || 'utf-8'
+    this._allowUnknownFormat = !!opts.allowUnknownFormat
+    this._unlockBound = this._unlock.bind(this)
+  }
+
+  _unlock (err) {
+    this._locked = false
+
+    if (err) {
+      this.destroy(err)
+      this._continueWrite(err)
+      return
+    }
+
+    this._update()
+  }
+
+  _consumeHeader () {
+    if (this._locked) return false
+
+    this._offset = this._buffer.shifted
+
+    try {
+      this._header = headers.decode(this._buffer.shift(512), this._filenameEncoding, this._allowUnknownFormat)
+    } catch (err) {
+      this._continueWrite(err)
+      return false
+    }
+
+    if (!this._header) return true
+
+    switch (this._header.type) {
+      case 'gnu-long-path':
+      case 'gnu-long-link-path':
+      case 'pax-global-header':
+      case 'pax-header':
+        this._longHeader = true
+        this._missing = this._header.size
+        return true
+    }
+
+    this._locked = true
+    this._applyLongHeaders()
+
+    if (this._header.size === 0 || this._header.type === 'directory') {
+      this.emit('entry', this._header, this._createStream(), this._unlockBound)
+      return true
+    }
+
+    this._stream = this._createStream()
+    this._missing = this._header.size
+
+    this.emit('entry', this._header, this._stream, this._unlockBound)
+    return true
+  }
+
+  _applyLongHeaders () {
+    if (this._gnuLongPath) {
+      this._header.name = this._gnuLongPath
+      this._gnuLongPath = null
+    }
+
+    if (this._gnuLongLinkPath) {
+      this._header.linkname = this._gnuLongLinkPath
+      this._gnuLongLinkPath = null
+    }
+
+    if (this._pax) {
+      if (this._pax.path) this._header.name = this._pax.path
+      if (this._pax.linkpath) this._header.linkname = this._pax.linkpath
+      if (this._pax.size) this._header.size = parseInt(this._pax.size, 10)
+      this._header.pax = this._pax
+      this._pax = null
+    }
+  }
+
+  _decodeLongHeader (buf) {
+    switch (this._header.type) {
+      case 'gnu-long-path':
+        this._gnuLongPath = headers.decodeLongPath(buf, this._filenameEncoding)
+        break
+      case 'gnu-long-link-path':
+        this._gnuLongLinkPath = headers.decodeLongPath(buf, this._filenameEncoding)
+        break
+      case 'pax-global-header':
+        this._paxGlobal = headers.decodePax(buf)
+        break
+      case 'pax-header':
+        this._pax = this._paxGlobal === null
+          ? headers.decodePax(buf)
+          : Object.assign({}, this._paxGlobal, headers.decodePax(buf))
+        break
+    }
+  }
+
+  _consumeLongHeader () {
+    this._longHeader = false
+    this._missing = overflow(this._header.size)
+
+    const buf = this._buffer.shift(this._header.size)
+
+    try {
+      this._decodeLongHeader(buf)
+    } catch (err) {
+      this._continueWrite(err)
+      return false
+    }
+
+    return true
+  }
+
+  _consumeStream () {
+    const buf = this._buffer.shiftFirst(this._missing)
+    if (buf === null) return false
+
+    this._missing -= buf.byteLength
+    const drained = this._stream.push(buf)
+
+    if (this._missing === 0) {
+      this._stream.push(null)
+      if (drained) this._stream._detach()
+      return drained && this._locked === false
+    }
+
+    return drained
+  }
+
+  _createStream () {
+    return new Source(this, this._header, this._offset)
+  }
+
+  _update () {
+    while (this._buffer.buffered > 0 && !this.destroying) {
+      if (this._missing > 0) {
+        if (this._stream !== null) {
+          if (this._consumeStream() === false) return
+          continue
+        }
+
+        if (this._longHeader === true) {
+          if (this._missing > this._buffer.buffered) break
+          if (this._consumeLongHeader() === false) return false
+          continue
+        }
+
+        const ignore = this._buffer.shiftFirst(this._missing)
+        if (ignore !== null) this._missing -= ignore.byteLength
+        continue
+      }
+
+      if (this._buffer.buffered < 512) break
+      if (this._stream !== null || this._consumeHeader() === false) return
+    }
+
+    this._continueWrite(null)
+  }
+
+  _continueWrite (err) {
+    const cb = this._callback
+    this._callback = noop
+    cb(err)
+  }
+
+  _write (data, cb) {
+    this._callback = cb
+    this._buffer.push(data)
+    this._update()
+  }
+
+  _final (cb) {
+    this._finished = this._missing === 0 && this._buffer.buffered === 0
+    cb(this._finished ? null : new Error('Unexpected end of data'))
+  }
+
+  _predestroy () {
+    this._continueWrite(null)
+  }
+
+  _destroy (cb) {
+    if (this._stream) this._stream.destroy(getStreamError(this))
+    cb(null)
+  }
+
+  [Symbol.asyncIterator] () {
+    let error = null
+
+    let promiseResolve = null
+    let promiseReject = null
+
+    let entryStream = null
+    let entryCallback = null
+
+    const extract = this
+
+    this.on('entry', onentry)
+    this.on('error', (err) => { error = err })
+    this.on('close', onclose)
+
+    return {
+      [Symbol.asyncIterator] () {
+        return this
+      },
+      next () {
+        return new Promise(onnext)
+      },
+      return () {
+        return destroy(null)
+      },
+      throw (err) {
+        return destroy(err)
+      }
+    }
+
+    function consumeCallback (err) {
+      if (!entryCallback) return
+      const cb = entryCallback
+      entryCallback = null
+      cb(err)
+    }
+
+    function onnext (resolve, reject) {
+      if (error) {
+        return reject(error)
+      }
+
+      if (entryStream) {
+        resolve({ value: entryStream, done: false })
+        entryStream = null
+        return
+      }
+
+      promiseResolve = resolve
+      promiseReject = reject
+
+      consumeCallback(null)
+
+      if (extract._finished && promiseResolve) {
+        promiseResolve({ value: undefined, done: true })
+        promiseResolve = promiseReject = null
+      }
+    }
+
+    function onentry (header, stream, callback) {
+      entryCallback = callback
+      stream.on('error', noop) // no way around this due to tick sillyness
+
+      if (promiseResolve) {
+        promiseResolve({ value: stream, done: false })
+        promiseResolve = promiseReject = null
+      } else {
+        entryStream = stream
+      }
+    }
+
+    function onclose () {
+      consumeCallback(error)
+      if (!promiseResolve) return
+      if (error) promiseReject(error)
+      else promiseResolve({ value: undefined, done: true })
+      promiseResolve = promiseReject = null
+    }
+
+    function destroy (err) {
+      extract.destroy(err)
+      consumeCallback(err)
+      return new Promise((resolve, reject) => {
+        if (extract.destroyed) return resolve({ value: undefined, done: true })
+        extract.once('close', function () {
+          if (err) reject(err)
+          else resolve({ value: undefined, done: true })
+        })
+      })
+    }
+  }
+}
+
+module.exports = function extract (opts) {
+  return new Extract(opts)
+}
+
+function noop () {}
+
+function overflow (size) {
+  size &= 511
+  return size && 512 - size
+}
+
+
+/***/ }),
+
+/***/ 8428:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+const b4a = __nccwpck_require__(3057)
+
+const ZEROS = '0000000000000000000'
+const SEVENS = '7777777777777777777'
+const ZERO_OFFSET = '0'.charCodeAt(0)
+const USTAR_MAGIC = b4a.from([0x75, 0x73, 0x74, 0x61, 0x72, 0x00]) // ustar\x00
+const USTAR_VER = b4a.from([ZERO_OFFSET, ZERO_OFFSET])
+const GNU_MAGIC = b4a.from([0x75, 0x73, 0x74, 0x61, 0x72, 0x20]) // ustar\x20
+const GNU_VER = b4a.from([0x20, 0x00])
+const MASK = 0o7777
+const MAGIC_OFFSET = 257
+const VERSION_OFFSET = 263
+
+exports.decodeLongPath = function decodeLongPath (buf, encoding) {
+  return decodeStr(buf, 0, buf.length, encoding)
+}
+
+exports.encodePax = function encodePax (opts) { // TODO: encode more stuff in pax
+  let result = ''
+  if (opts.name) result += addLength(' path=' + opts.name + '\n')
+  if (opts.linkname) result += addLength(' linkpath=' + opts.linkname + '\n')
+  const pax = opts.pax
+  if (pax) {
+    for (const key in pax) {
+      result += addLength(' ' + key + '=' + pax[key] + '\n')
+    }
+  }
+  return b4a.from(result)
+}
+
+exports.decodePax = function decodePax (buf) {
+  const result = {}
+
+  while (buf.length) {
+    let i = 0
+    while (i < buf.length && buf[i] !== 32) i++
+    const len = parseInt(b4a.toString(buf.subarray(0, i)), 10)
+    if (!len) return result
+
+    const b = b4a.toString(buf.subarray(i + 1, len - 1))
+    const keyIndex = b.indexOf('=')
+    if (keyIndex === -1) return result
+    result[b.slice(0, keyIndex)] = b.slice(keyIndex + 1)
+
+    buf = buf.subarray(len)
+  }
+
+  return result
+}
+
+exports.encode = function encode (opts) {
+  const buf = b4a.alloc(512)
+  let name = opts.name
+  let prefix = ''
+
+  if (opts.typeflag === 5 && name[name.length - 1] !== '/') name += '/'
+  if (b4a.byteLength(name) !== name.length) return null // utf-8
+
+  while (b4a.byteLength(name) > 100) {
+    const i = name.indexOf('/')
+    if (i === -1) return null
+    prefix += prefix ? '/' + name.slice(0, i) : name.slice(0, i)
+    name = name.slice(i + 1)
+  }
+
+  if (b4a.byteLength(name) > 100 || b4a.byteLength(prefix) > 155) return null
+  if (opts.linkname && b4a.byteLength(opts.linkname) > 100) return null
+
+  b4a.write(buf, name)
+  b4a.write(buf, encodeOct(opts.mode & MASK, 6), 100)
+  b4a.write(buf, encodeOct(opts.uid, 6), 108)
+  b4a.write(buf, encodeOct(opts.gid, 6), 116)
+  encodeSize(opts.size, buf, 124)
+  b4a.write(buf, encodeOct((opts.mtime.getTime() / 1000) | 0, 11), 136)
+
+  buf[156] = ZERO_OFFSET + toTypeflag(opts.type)
+
+  if (opts.linkname) b4a.write(buf, opts.linkname, 157)
+
+  b4a.copy(USTAR_MAGIC, buf, MAGIC_OFFSET)
+  b4a.copy(USTAR_VER, buf, VERSION_OFFSET)
+  if (opts.uname) b4a.write(buf, opts.uname, 265)
+  if (opts.gname) b4a.write(buf, opts.gname, 297)
+  b4a.write(buf, encodeOct(opts.devmajor || 0, 6), 329)
+  b4a.write(buf, encodeOct(opts.devminor || 0, 6), 337)
+
+  if (prefix) b4a.write(buf, prefix, 345)
+
+  b4a.write(buf, encodeOct(cksum(buf), 6), 148)
+
+  return buf
+}
+
+exports.decode = function decode (buf, filenameEncoding, allowUnknownFormat) {
+  let typeflag = buf[156] === 0 ? 0 : buf[156] - ZERO_OFFSET
+
+  let name = decodeStr(buf, 0, 100, filenameEncoding)
+  const mode = decodeOct(buf, 100, 8)
+  const uid = decodeOct(buf, 108, 8)
+  const gid = decodeOct(buf, 116, 8)
+  const size = decodeOct(buf, 124, 12)
+  const mtime = decodeOct(buf, 136, 12)
+  const type = toType(typeflag)
+  const linkname = buf[157] === 0 ? null : decodeStr(buf, 157, 100, filenameEncoding)
+  const uname = decodeStr(buf, 265, 32)
+  const gname = decodeStr(buf, 297, 32)
+  const devmajor = decodeOct(buf, 329, 8)
+  const devminor = decodeOct(buf, 337, 8)
+
+  const c = cksum(buf)
+
+  // checksum is still initial value if header was null.
+  if (c === 8 * 32) return null
+
+  // valid checksum
+  if (c !== decodeOct(buf, 148, 8)) throw new Error('Invalid tar header. Maybe the tar is corrupted or it needs to be gunzipped?')
+
+  if (isUSTAR(buf)) {
+    // ustar (posix) format.
+    // prepend prefix, if present.
+    if (buf[345]) name = decodeStr(buf, 345, 155, filenameEncoding) + '/' + name
+  } else if (isGNU(buf)) {
+    // 'gnu'/'oldgnu' format. Similar to ustar, but has support for incremental and
+    // multi-volume tarballs.
+  } else {
+    if (!allowUnknownFormat) {
+      throw new Error('Invalid tar header: unknown format.')
+    }
+  }
+
+  // to support old tar versions that use trailing / to indicate dirs
+  if (typeflag === 0 && name && name[name.length - 1] === '/') typeflag = 5
+
+  return {
+    name,
+    mode,
+    uid,
+    gid,
+    size,
+    mtime: new Date(1000 * mtime),
+    type,
+    linkname,
+    uname,
+    gname,
+    devmajor,
+    devminor,
+    pax: null
+  }
+}
+
+function isUSTAR (buf) {
+  return b4a.equals(USTAR_MAGIC, buf.subarray(MAGIC_OFFSET, MAGIC_OFFSET + 6))
+}
+
+function isGNU (buf) {
+  return b4a.equals(GNU_MAGIC, buf.subarray(MAGIC_OFFSET, MAGIC_OFFSET + 6)) &&
+    b4a.equals(GNU_VER, buf.subarray(VERSION_OFFSET, VERSION_OFFSET + 2))
+}
+
+function clamp (index, len, defaultValue) {
+  if (typeof index !== 'number') return defaultValue
+  index = ~~index // Coerce to integer.
+  if (index >= len) return len
+  if (index >= 0) return index
+  index += len
+  if (index >= 0) return index
+  return 0
+}
+
+function toType (flag) {
+  switch (flag) {
+    case 0:
+      return 'file'
+    case 1:
+      return 'link'
+    case 2:
+      return 'symlink'
+    case 3:
+      return 'character-device'
+    case 4:
+      return 'block-device'
+    case 5:
+      return 'directory'
+    case 6:
+      return 'fifo'
+    case 7:
+      return 'contiguous-file'
+    case 72:
+      return 'pax-header'
+    case 55:
+      return 'pax-global-header'
+    case 27:
+      return 'gnu-long-link-path'
+    case 28:
+    case 30:
+      return 'gnu-long-path'
+  }
+
+  return null
+}
+
+function toTypeflag (flag) {
+  switch (flag) {
+    case 'file':
+      return 0
+    case 'link':
+      return 1
+    case 'symlink':
+      return 2
+    case 'character-device':
+      return 3
+    case 'block-device':
+      return 4
+    case 'directory':
+      return 5
+    case 'fifo':
+      return 6
+    case 'contiguous-file':
+      return 7
+    case 'pax-header':
+      return 72
+  }
+
+  return 0
+}
+
+function indexOf (block, num, offset, end) {
+  for (; offset < end; offset++) {
+    if (block[offset] === num) return offset
+  }
+  return end
+}
+
+function cksum (block) {
+  let sum = 8 * 32
+  for (let i = 0; i < 148; i++) sum += block[i]
+  for (let j = 156; j < 512; j++) sum += block[j]
+  return sum
+}
+
+function encodeOct (val, n) {
+  val = val.toString(8)
+  if (val.length > n) return SEVENS.slice(0, n) + ' '
+  return ZEROS.slice(0, n - val.length) + val + ' '
+}
+
+function encodeSizeBin (num, buf, off) {
+  buf[off] = 0x80
+  for (let i = 11; i > 0; i--) {
+    buf[off + i] = num & 0xff
+    num = Math.floor(num / 0x100)
+  }
+}
+
+function encodeSize (num, buf, off) {
+  if (num.toString(8).length > 11) {
+    encodeSizeBin(num, buf, off)
+  } else {
+    b4a.write(buf, encodeOct(num, 11), off)
+  }
+}
+
+/* Copied from the node-tar repo and modified to meet
+ * tar-stream coding standard.
+ *
+ * Source: https://github.com/npm/node-tar/blob/51b6627a1f357d2eb433e7378e5f05e83b7aa6cd/lib/header.js#L349
+ */
+function parse256 (buf) {
+  // first byte MUST be either 80 or FF
+  // 80 for positive, FF for 2's comp
+  let positive
+  if (buf[0] === 0x80) positive = true
+  else if (buf[0] === 0xFF) positive = false
+  else return null
+
+  // build up a base-256 tuple from the least sig to the highest
+  const tuple = []
+  let i
+  for (i = buf.length - 1; i > 0; i--) {
+    const byte = buf[i]
+    if (positive) tuple.push(byte)
+    else tuple.push(0xFF - byte)
+  }
+
+  let sum = 0
+  const l = tuple.length
+  for (i = 0; i < l; i++) {
+    sum += tuple[i] * Math.pow(256, i)
+  }
+
+  return positive ? sum : -1 * sum
+}
+
+function decodeOct (val, offset, length) {
+  val = val.subarray(offset, offset + length)
+  offset = 0
+
+  // If prefixed with 0x80 then parse as a base-256 integer
+  if (val[offset] & 0x80) {
+    return parse256(val)
+  } else {
+    // Older versions of tar can prefix with spaces
+    while (offset < val.length && val[offset] === 32) offset++
+    const end = clamp(indexOf(val, 32, offset, val.length), val.length, val.length)
+    while (offset < end && val[offset] === 0) offset++
+    if (end === offset) return 0
+    return parseInt(b4a.toString(val.subarray(offset, end)), 8)
+  }
+}
+
+function decodeStr (val, offset, length, encoding) {
+  return b4a.toString(val.subarray(offset, indexOf(val, 0, offset, offset + length)), encoding)
+}
+
+function addLength (str) {
+  const len = b4a.byteLength(str)
+  let digits = Math.floor(Math.log(len) / Math.log(10)) + 1
+  if (len + digits >= Math.pow(10, digits)) digits++
+
+  return (len + digits) + str
+}
+
+
+/***/ }),
+
+/***/ 6118:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+exports.extract = __nccwpck_require__(5763)
+exports.pack = __nccwpck_require__(861)
+
+
+/***/ }),
+
+/***/ 861:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { Readable, Writable, getStreamError } = __nccwpck_require__(6204)
+const b4a = __nccwpck_require__(3057)
+
+const constants = __nccwpck_require__(775)
+const headers = __nccwpck_require__(8428)
+
+const DMODE = 0o755
+const FMODE = 0o644
+
+const END_OF_TAR = b4a.alloc(1024)
+
+class Sink extends Writable {
+  constructor (pack, header, callback) {
+    super({ mapWritable, eagerOpen: true })
+
+    this.written = 0
+    this.header = header
+
+    this._callback = callback
+    this._linkname = null
+    this._isLinkname = header.type === 'symlink' && !header.linkname
+    this._isVoid = header.type !== 'file' && header.type !== 'contiguous-file'
+    this._finished = false
+    this._pack = pack
+    this._openCallback = null
+
+    if (this._pack._stream === null) this._pack._stream = this
+    else this._pack._pending.push(this)
+  }
+
+  _open (cb) {
+    this._openCallback = cb
+    if (this._pack._stream === this) this._continueOpen()
+  }
+
+  _continuePack (err) {
+    if (this._callback === null) return
+
+    const callback = this._callback
+    this._callback = null
+
+    callback(err)
+  }
+
+  _continueOpen () {
+    if (this._pack._stream === null) this._pack._stream = this
+
+    const cb = this._openCallback
+    this._openCallback = null
+    if (cb === null) return
+
+    if (this._pack.destroying) return cb(new Error('pack stream destroyed'))
+    if (this._pack._finalized) return cb(new Error('pack stream is already finalized'))
+
+    this._pack._stream = this
+
+    if (!this._isLinkname) {
+      this._pack._encode(this.header)
+    }
+
+    if (this._isVoid) {
+      this._finish()
+      this._continuePack(null)
+    }
+
+    cb(null)
+  }
+
+  _write (data, cb) {
+    if (this._isLinkname) {
+      this._linkname = this._linkname ? b4a.concat([this._linkname, data]) : data
+      return cb(null)
+    }
+
+    if (this._isVoid) {
+      if (data.byteLength > 0) {
+        return cb(new Error('No body allowed for this entry'))
+      }
+      return cb()
+    }
+
+    this.written += data.byteLength
+    if (this._pack.push(data)) return cb()
+    this._pack._drain = cb
+  }
+
+  _finish () {
+    if (this._finished) return
+    this._finished = true
+
+    if (this._isLinkname) {
+      this.header.linkname = this._linkname ? b4a.toString(this._linkname, 'utf-8') : ''
+      this._pack._encode(this.header)
+    }
+
+    overflow(this._pack, this.header.size)
+
+    this._pack._done(this)
+  }
+
+  _final (cb) {
+    if (this.written !== this.header.size) { // corrupting tar
+      return cb(new Error('Size mismatch'))
+    }
+
+    this._finish()
+    cb(null)
+  }
+
+  _getError () {
+    return getStreamError(this) || new Error('tar entry destroyed')
+  }
+
+  _predestroy () {
+    this._pack.destroy(this._getError())
+  }
+
+  _destroy (cb) {
+    this._pack._done(this)
+
+    this._continuePack(this._finished ? null : this._getError())
+
+    cb()
+  }
+}
+
+class Pack extends Readable {
+  constructor (opts) {
+    super(opts)
+    this._drain = noop
+    this._finalized = false
+    this._finalizing = false
+    this._pending = []
+    this._stream = null
+  }
+
+  entry (header, buffer, callback) {
+    if (this._finalized || this.destroying) throw new Error('already finalized or destroyed')
+
+    if (typeof buffer === 'function') {
+      callback = buffer
+      buffer = null
+    }
+
+    if (!callback) callback = noop
+
+    if (!header.size || header.type === 'symlink') header.size = 0
+    if (!header.type) header.type = modeToType(header.mode)
+    if (!header.mode) header.mode = header.type === 'directory' ? DMODE : FMODE
+    if (!header.uid) header.uid = 0
+    if (!header.gid) header.gid = 0
+    if (!header.mtime) header.mtime = new Date()
+
+    if (typeof buffer === 'string') buffer = b4a.from(buffer)
+
+    const sink = new Sink(this, header, callback)
+
+    if (b4a.isBuffer(buffer)) {
+      header.size = buffer.byteLength
+      sink.write(buffer)
+      sink.end()
+      return sink
+    }
+
+    if (sink._isVoid) {
+      return sink
+    }
+
+    return sink
+  }
+
+  finalize () {
+    if (this._stream || this._pending.length > 0) {
+      this._finalizing = true
+      return
+    }
+
+    if (this._finalized) return
+    this._finalized = true
+
+    this.push(END_OF_TAR)
+    this.push(null)
+  }
+
+  _done (stream) {
+    if (stream !== this._stream) return
+
+    this._stream = null
+
+    if (this._finalizing) this.finalize()
+    if (this._pending.length) this._pending.shift()._continueOpen()
+  }
+
+  _encode (header) {
+    if (!header.pax) {
+      const buf = headers.encode(header)
+      if (buf) {
+        this.push(buf)
+        return
+      }
+    }
+    this._encodePax(header)
+  }
+
+  _encodePax (header) {
+    const paxHeader = headers.encodePax({
+      name: header.name,
+      linkname: header.linkname,
+      pax: header.pax
+    })
+
+    const newHeader = {
+      name: 'PaxHeader',
+      mode: header.mode,
+      uid: header.uid,
+      gid: header.gid,
+      size: paxHeader.byteLength,
+      mtime: header.mtime,
+      type: 'pax-header',
+      linkname: header.linkname && 'PaxHeader',
+      uname: header.uname,
+      gname: header.gname,
+      devmajor: header.devmajor,
+      devminor: header.devminor
+    }
+
+    this.push(headers.encode(newHeader))
+    this.push(paxHeader)
+    overflow(this, paxHeader.byteLength)
+
+    newHeader.size = header.size
+    newHeader.type = header.type
+    this.push(headers.encode(newHeader))
+  }
+
+  _doDrain () {
+    const drain = this._drain
+    this._drain = noop
+    drain()
+  }
+
+  _predestroy () {
+    const err = getStreamError(this)
+
+    if (this._stream) this._stream.destroy(err)
+
+    while (this._pending.length) {
+      const stream = this._pending.shift()
+      stream.destroy(err)
+      stream._continueOpen()
+    }
+
+    this._doDrain()
+  }
+
+  _read (cb) {
+    this._doDrain()
+    cb()
+  }
+}
+
+module.exports = function pack (opts) {
+  return new Pack(opts)
+}
+
+function modeToType (mode) {
+  switch (mode & constants.S_IFMT) {
+    case constants.S_IFBLK: return 'block-device'
+    case constants.S_IFCHR: return 'character-device'
+    case constants.S_IFDIR: return 'directory'
+    case constants.S_IFIFO: return 'fifo'
+    case constants.S_IFLNK: return 'symlink'
+  }
+
+  return 'file'
+}
+
+function noop () {}
+
+function overflow (self, size) {
+  size &= 511
+  if (size) self.push(END_OF_TAR.subarray(0, 512 - size))
+}
+
+function mapWritable (buf) {
+  return b4a.isBuffer(buf) ? buf : b4a.from(buf)
+}
+
+
+/***/ }),
+
+/***/ 7934:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const PassThroughDecoder = __nccwpck_require__(7256)
+const UTF8Decoder = __nccwpck_require__(6414)
+
+module.exports = class TextDecoder {
+  constructor(encoding = 'utf8') {
+    this.encoding = normalizeEncoding(encoding)
+
+    switch (this.encoding) {
+      case 'utf8':
+        this.decoder = new UTF8Decoder()
+        break
+      case 'utf16le':
+      case 'base64':
+        throw new Error('Unsupported encoding: ' + this.encoding)
+      default:
+        this.decoder = new PassThroughDecoder(this.encoding)
+    }
+  }
+
+  get remaining() {
+    return this.decoder.remaining
+  }
+
+  push(data) {
+    if (typeof data === 'string') return data
+    return this.decoder.decode(data)
+  }
+
+  // For Node.js compatibility
+  write(data) {
+    return this.push(data)
+  }
+
+  end(data) {
+    let result = ''
+    if (data) result = this.push(data)
+    result += this.decoder.flush()
+    return result
+  }
+}
+
+function normalizeEncoding(encoding) {
+  encoding = encoding.toLowerCase()
+
+  switch (encoding) {
+    case 'utf8':
+    case 'utf-8':
+      return 'utf8'
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      return 'utf16le'
+    case 'latin1':
+    case 'binary':
+      return 'latin1'
+    case 'base64':
+    case 'ascii':
+    case 'hex':
+      return encoding
+    default:
+      throw new Error('Unknown encoding: ' + encoding)
+  }
+}
+
+
+/***/ }),
+
+/***/ 7256:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const b4a = __nccwpck_require__(3057)
+
+module.exports = class PassThroughDecoder {
+  constructor(encoding) {
+    this.encoding = encoding
+  }
+
+  get remaining() {
+    return 0
+  }
+
+  decode(data) {
+    return b4a.toString(data, this.encoding)
+  }
+
+  flush() {
+    return ''
+  }
+}
+
+
+/***/ }),
+
+/***/ 6414:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const b4a = __nccwpck_require__(3057)
+
+/**
+ * https://encoding.spec.whatwg.org/#utf-8-decoder
+ */
+module.exports = class UTF8Decoder {
+  constructor() {
+    this._reset()
+  }
+
+  get remaining() {
+    return this.bytesSeen
+  }
+
+  decode(data) {
+    if (data.byteLength === 0) return ''
+
+    if (this.bytesNeeded === 0 && trailingIncomplete(data, 0) === 0) {
+      this.bytesSeen = trailingBytesSeen(data)
+      return b4a.toString(data, 'utf8')
+    }
+
+    let result = ''
+    let start = 0
+
+    if (this.bytesNeeded > 0) {
+      while (start < data.byteLength) {
+        const byte = data[start]
+
+        if (byte < this.lowerBoundary || byte > this.upperBoundary) {
+          result += '\ufffd'
+          this._reset()
+          break
+        }
+
+        this.lowerBoundary = 0x80
+        this.upperBoundary = 0xbf
+        this.codePoint = (this.codePoint << 6) | (byte & 0x3f)
+        this.bytesSeen++
+        start++
+
+        if (this.bytesSeen === this.bytesNeeded) {
+          result += String.fromCodePoint(this.codePoint)
+          this._reset()
+          break
+        }
+      }
+
+      if (this.bytesNeeded > 0) return result
+    }
+
+    const trailing = trailingIncomplete(data, start)
+    const end = data.byteLength - trailing
+
+    if (end > start) result += b4a.toString(data, 'utf8', start, end)
+
+    for (let i = end; i < data.byteLength; i++) {
+      const byte = data[i]
+
+      if (this.bytesNeeded === 0) {
+        if (byte <= 0x7f) {
+          this.bytesSeen = 0
+          result += String.fromCharCode(byte)
+        } else if (byte >= 0xc2 && byte <= 0xdf) {
+          this.bytesNeeded = 2
+          this.bytesSeen = 1
+          this.codePoint = byte & 0x1f
+        } else if (byte >= 0xe0 && byte <= 0xef) {
+          if (byte === 0xe0) this.lowerBoundary = 0xa0
+          else if (byte === 0xed) this.upperBoundary = 0x9f
+          this.bytesNeeded = 3
+          this.bytesSeen = 1
+          this.codePoint = byte & 0xf
+        } else if (byte >= 0xf0 && byte <= 0xf4) {
+          if (byte === 0xf0) this.lowerBoundary = 0x90
+          else if (byte === 0xf4) this.upperBoundary = 0x8f
+          this.bytesNeeded = 4
+          this.bytesSeen = 1
+          this.codePoint = byte & 0x7
+        } else {
+          this.bytesSeen = 1
+          result += '\ufffd'
+        }
+
+        continue
+      }
+
+      if (byte < this.lowerBoundary || byte > this.upperBoundary) {
+        result += '\ufffd'
+        i--
+        this._reset()
+
+        continue
+      }
+
+      this.lowerBoundary = 0x80
+      this.upperBoundary = 0xbf
+
+      this.codePoint = (this.codePoint << 6) | (byte & 0x3f)
+      this.bytesSeen++
+
+      if (this.bytesSeen === this.bytesNeeded) {
+        result += String.fromCodePoint(this.codePoint)
+        this._reset()
+      }
+    }
+
+    return result
+  }
+
+  flush() {
+    const result = this.bytesNeeded > 0 ? '\ufffd' : ''
+    this._reset()
+    return result
+  }
+
+  _reset() {
+    this.codePoint = 0
+    this.bytesNeeded = 0
+    this.bytesSeen = 0
+    this.lowerBoundary = 0x80
+    this.upperBoundary = 0xbf
+  }
+}
+
+function trailingIncomplete(data, start) {
+  const len = data.byteLength
+  if (len <= start) return 0
+
+  const limit = Math.max(start, len - 4)
+
+  let i = len - 1
+  while (i > limit && (data[i] & 0xc0) === 0x80) i--
+
+  if (i < start) return 0
+
+  const byte = data[i]
+
+  let needed
+  if (byte <= 0x7f) return 0
+  if (byte >= 0xc2 && byte <= 0xdf) needed = 2
+  else if (byte >= 0xe0 && byte <= 0xef) needed = 3
+  else if (byte >= 0xf0 && byte <= 0xf4) needed = 4
+  else return 0
+
+  const available = len - i
+  return available < needed ? available : 0
+}
+
+function trailingBytesSeen(data) {
+  const len = data.byteLength
+  if (len === 0) return 0
+
+  const last = data[len - 1]
+
+  if (last <= 0x7f) return 0
+  if ((last & 0xc0) !== 0x80) return 1
+
+  const limit = Math.max(0, len - 4)
+
+  let i = len - 2
+  while (i >= limit && (data[i] & 0xc0) === 0x80) i--
+
+  if (i < 0) return 1
+
+  const first = data[i]
+
+  let needed
+  if (first >= 0xc2 && first <= 0xdf) needed = 2
+  else if (first >= 0xe0 && first <= 0xef) needed = 3
+  else if (first >= 0xf0 && first <= 0xf4) needed = 4
+  else return 1
+
+  if (len - i !== needed) return 1
+
+  if (needed >= 3) {
+    const second = data[i + 1]
+    if (first === 0xe0 && second < 0xa0) return 1
+    if (first === 0xed && second > 0x9f) return 1
+    if (first === 0xf0 && second < 0x90) return 1
+    if (first === 0xf4 && second > 0x8f) return 1
+  }
+
+  return 0
+}
+
+
+/***/ }),
+
 /***/ 770:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -25689,7 +28586,6 @@ class PipecatCloudAPI {
 
   /**
    * Extract an error message from an API response.
-   * The Pipecat Cloud API returns errors as { error: "...", code: "..." }.
    * @param {object} result - Parsed response body
    * @param {number} statusCode - HTTP status code
    * @returns {string}
@@ -25697,6 +28593,8 @@ class PipecatCloudAPI {
   _errorMessage(result, statusCode) {
     return result?.error || result?.message || `HTTP ${statusCode}`;
   }
+
+  // ── Agent endpoints ────────────────────────────────────────────────
 
   /**
    * Check if an agent already exists.
@@ -25812,6 +28710,158 @@ class PipecatCloudAPI {
       `Deployment did not become ready within ${timeoutSeconds} seconds`
     );
   }
+
+  // ── Build endpoints ────────────────────────────────────────────────
+
+  /**
+   * Get a presigned URL for uploading build context.
+   * @param {string} [region] - Target region for the build
+   * @returns {{ uploadId: string, uploadUrl: string, uploadFields: object, expiresAt: string }}
+   */
+  async buildUploadUrl(region) {
+    const url = `${this.apiUrl}/v1/builds/upload-url`;
+    const payload = {};
+    if (region) payload.region = region;
+
+    core.debug(`POST ${url}`);
+    const response = await this.client.post(url, JSON.stringify(payload));
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to get upload URL: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Create a new build from uploaded context.
+   * @param {string} uploadId - ID from upload URL response
+   * @param {string} [region] - Target region
+   * @param {string} [dockerfilePath] - Dockerfile path within context
+   * @returns {{ build: object, cached?: boolean }}
+   */
+  async buildCreate(uploadId, region, dockerfilePath) {
+    const url = `${this.apiUrl}/v1/builds`;
+    const payload = {
+      uploadId,
+      dockerfilePath: dockerfilePath || "Dockerfile",
+    };
+    if (region) payload.region = region;
+
+    core.debug(`POST ${url}`);
+    const response = await this.client.post(url, JSON.stringify(payload));
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to create build: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Get build status by ID.
+   * @param {string} buildId - Build ID
+   * @returns {object} Build data
+   */
+  async buildGet(buildId) {
+    const url = `${this.apiUrl}/v1/builds/${encodeURIComponent(buildId)}`;
+    core.debug(`GET ${url}`);
+
+    const response = await this.client.get(url);
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode === 404) {
+      return null;
+    }
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to get build status: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * List builds with optional filters (used for cache lookup).
+   * @param {object} params - Query parameters
+   * @param {string} [params.contextHash] - Filter by context hash
+   * @param {string} [params.region] - Filter by region
+   * @param {string} [params.status] - Filter by status
+   * @param {number} [params.limit] - Max results
+   * @returns {{ builds: object[], total: number }}
+   */
+  async buildList(params = {}) {
+    const query = new URLSearchParams();
+    if (params.contextHash) query.set("contextHash", params.contextHash);
+    if (params.region) query.set("region", params.region);
+    if (params.status) query.set("status", params.status);
+    if (params.limit) query.set("limit", String(params.limit));
+
+    const url = `${this.apiUrl}/v1/builds?${query.toString()}`;
+    core.debug(`GET ${url}`);
+
+    const response = await this.client.get(url);
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to list builds: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Poll build status until completion or timeout.
+   * @param {string} buildId - Build ID to poll
+   * @param {number} [maxDuration=600] - Maximum wait time in seconds
+   * @param {number} [pollInterval=5] - Seconds between polls
+   * @returns {{ success: boolean, build: object }}
+   */
+  async pollBuildStatus(buildId, maxDuration = 600, pollInterval = 5) {
+    const startTime = Date.now();
+    const terminalStatuses = new Set(["success", "failed", "timeout"]);
+
+    core.info(`Polling build status (timeout: ${maxDuration}s)...`);
+
+    while (true) {
+      const elapsed = (Date.now() - startTime) / 1000;
+      if (elapsed > maxDuration) {
+        return {
+          success: false,
+          build: { status: "timeout", error: "Build polling timeout exceeded" },
+        };
+      }
+
+      await sleep(pollInterval * 1000);
+
+      const data = await this.buildGet(buildId);
+      if (!data) {
+        return {
+          success: false,
+          build: { status: "error", error: "Build not found" },
+        };
+      }
+
+      const build = data.build || data;
+      const status = build.status || "unknown";
+
+      core.info(`Build status: ${status} (${Math.round(elapsed)}s elapsed)`);
+
+      if (terminalStatuses.has(status)) {
+        return { success: status === "success", build };
+      }
+    }
+  }
 }
 
 function sleep(ms) {
@@ -25849,143 +28899,306 @@ module.exports = { PipecatCloudAPI, removeEmptyValues };
 
 /***/ }),
 
-/***/ 1417:
+/***/ 9501:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 // SPDX-License-Identifier: BSD 2-Clause License
 // Copyright (c) 2025-2026, Daily
 
-const os = __nccwpck_require__(857);
+const fs = __nccwpck_require__(9896);
+const path = __nccwpck_require__(6928);
+const crypto = __nccwpck_require__(6982);
+const zlib = __nccwpck_require__(3106);
 const core = __nccwpck_require__(7484);
-const exec = __nccwpck_require__(5236);
+const tar = __nccwpck_require__(6118);
 
-// Pipecat Cloud runs on ARM — all images must target this platform.
-const TARGET_PLATFORM = "linux/arm64";
+// Default patterns to exclude from build context
+const DEFAULT_EXCLUSIONS = new Set([
+  // Version control
+  ".git",
+  ".gitignore",
+  ".gitattributes",
+  // Environment and secrets
+  ".env",
+  ".env.*",
+  "*.pem",
+  "*.key",
+  // Python artifacts
+  "__pycache__",
+  "*.pyc",
+  "*.pyo",
+  "*.pyd",
+  "*.so",
+  ".Python",
+  // Virtual environments
+  ".venv",
+  "venv",
+  "ENV",
+  "env",
+  // Testing
+  ".pytest_cache",
+  ".coverage",
+  "htmlcov",
+  ".tox",
+  ".nox",
+  // Type checking / Linting
+  ".mypy_cache",
+  ".ruff_cache",
+  // IDE
+  ".vscode",
+  ".idea",
+  "*.swp",
+  "*.swo",
+  // Build artifacts
+  "dist",
+  "build",
+  "*.egg-info",
+  "*.egg",
+  ".eggs",
+  // Node
+  "node_modules",
+  // CI/CD
+  ".github",
+  // AI tools
+  ".claude",
+  ".codex",
+  ".cursor",
+  // Pipecat config
+  "pcc-deploy.toml",
+  // Jupyter
+  ".ipynb_checkpoints",
+  // Caches
+  ".cache",
+  // Misc
+  ".DS_Store",
+  "Thumbs.db",
+  "*.log",
+]);
+
+const MAX_CONTEXT_SIZE = 500 * 1024 * 1024; // 500 MB
 
 /**
- * Parse the registry hostname from a full image name.
- * e.g. "ghcr.io/my-org/my-bot" => "ghcr.io"
- * e.g. "my-org/my-bot" => "docker.io" (Docker Hub default)
- *
- * @param {string} image - Full image name without tag
- * @returns {string} The registry hostname
+ * Check if a filename matches any exclusion pattern.
+ * Supports simple glob patterns with * wildcard.
  */
-function parseRegistry(image) {
-  const parts = image.split("/");
-
-  // If the first part contains a dot or colon, it's a registry hostname.
-  // e.g. "ghcr.io", "registry.example.com", "localhost:5000"
-  if (parts.length > 1 && (parts[0].includes(".") || parts[0].includes(":"))) {
-    return parts[0];
+function matchesPattern(name, pattern) {
+  if (!pattern.includes("*")) {
+    return name === pattern;
   }
-
-  // Otherwise it's Docker Hub
-  return "docker.io";
+  // Convert simple glob to regex (e.g. "*.pyc" -> /^.*\.pyc$/)
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+  return new RegExp(`^${escaped}$`).test(name);
 }
 
 /**
- * Detect the runner's CPU architecture and set up QEMU for arm64
- * emulation if the runner is not already arm64.
- *
- * If QEMU setup fails, a warning is emitted but execution continues —
- * the build may still succeed if emulation was configured externally.
+ * Check if a path should be excluded from the build context.
  */
-async function setupQEMU() {
-  const arch = os.arch(); // "x64", "arm64", etc.
-
-  if (arch === "arm64") {
-    core.info("Runner is arm64 — no cross-platform emulation needed");
-    return;
+function shouldExclude(relPath, exclusions) {
+  const parts = relPath.split(path.sep);
+  for (const pattern of exclusions) {
+    for (const part of parts) {
+      if (matchesPattern(part, pattern)) return true;
+    }
+    if (matchesPattern(relPath, pattern)) return true;
   }
+  return false;
+}
 
-  core.info(
-    `Runner architecture is ${arch} — setting up QEMU for arm64 emulation`
-  );
+/**
+ * Load patterns from .dockerignore file if it exists.
+ */
+function loadDockerignore(contextDir) {
+  const dockerignorePath = path.join(contextDir, ".dockerignore");
+  if (!fs.existsSync(dockerignorePath)) return null;
 
   try {
-    await exec.exec("docker", [
-      "run",
-      "--privileged",
-      "--rm",
-      "tonistiigi/binfmt",
-      "--install",
-      "arm64",
-    ]);
-    core.info("QEMU setup complete");
-  } catch (error) {
-    core.warning(
-      `Could not set up QEMU automatically: ${error.message}. ` +
-        "The build will be attempted anyway. If it fails, consider using " +
-        "an arm64 runner or adding docker/setup-qemu-action before this step."
-    );
+    const content = fs.readFileSync(dockerignorePath, "utf-8");
+    const patterns = new Set();
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith("#")) {
+        patterns.add(trimmed);
+      }
+    }
+    return patterns;
+  } catch (e) {
+    core.warning(`Failed to read .dockerignore: ${e.message}`);
+    return null;
   }
 }
 
 /**
- * Log in to a Docker registry.
- *
- * @param {string} registry - Registry hostname
- * @param {string} username - Registry username
- * @param {string} password - Registry password or token
+ * Get the set of exclusion patterns to use.
+ * .dockerignore takes precedence over defaults if present.
  */
-async function login(registry, username, password) {
-  core.info(`Logging in to ${registry}...`);
-
-  await exec.exec("docker", ["login", registry, "-u", username, "--password-stdin"], {
-    input: Buffer.from(password),
-  });
-
-  core.info(`Successfully logged in to ${registry}`);
+function getExclusions(contextDir) {
+  const dockerignore = loadDockerignore(contextDir);
+  if (dockerignore !== null) return dockerignore;
+  return new Set(DEFAULT_EXCLUSIONS);
 }
 
 /**
- * Build a Docker image targeting linux/arm64 for Pipecat Cloud.
- *
- * @param {string} imageWithTag - Full image reference including tag (e.g. ghcr.io/org/bot:abc123)
- * @param {string} dockerfile - Path to the Dockerfile
- * @param {string} context - Docker build context path
- * @param {string} buildArgsStr - Newline-separated build args (e.g. "ARG1=val1\nARG2=val2")
+ * Recursively collect files from a directory, respecting exclusions.
  */
-async function build(imageWithTag, dockerfile, context, buildArgsStr) {
-  core.info(
-    `Building Docker image: ${imageWithTag} (platform: ${TARGET_PLATFORM})`
-  );
+function collectFiles(basePath, currentPath, exclusions) {
+  const results = [];
+  const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
-  const args = ["build", "-t", imageWithTag, "-f", dockerfile, "--platform", TARGET_PLATFORM];
+  // Sort for determinism
+  entries.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Parse and add build args
-  if (buildArgsStr) {
-    const buildArgs = buildArgsStr
-      .split("\n")
-      .map((arg) => arg.trim())
-      .filter((arg) => arg.length > 0);
+  for (const entry of entries) {
+    const fullPath = path.join(currentPath, entry.name);
+    const relPath = path.relative(basePath, fullPath);
 
-    for (const arg of buildArgs) {
-      args.push("--build-arg", arg);
+    if (shouldExclude(relPath, exclusions)) continue;
+
+    if (entry.isDirectory()) {
+      results.push(...collectFiles(basePath, fullPath, exclusions));
+    } else if (entry.isFile()) {
+      results.push({ fullPath, arcName: relPath });
     }
   }
 
-  args.push(context);
-
-  await exec.exec("docker", args);
-
-  core.info(`Successfully built ${imageWithTag}`);
+  return results;
 }
 
 /**
- * Push a Docker image to its registry.
+ * Create a deterministic tarball from the build context directory.
  *
- * @param {string} imageWithTag - Full image reference including tag
+ * Determinism is achieved by:
+ * - Sorting files alphabetically
+ * - Setting mtime to Unix epoch (0)
+ * - Normalizing permissions (uid=0, gid=0)
+ * - Using gzip with mtime=0
+ *
+ * @param {string} contextDir - Directory containing build context
+ * @param {string} dockerfilePath - Path to Dockerfile relative to context
+ * @returns {Promise<{tarball: Buffer, contextHash: string, fileCount: number, totalSize: number}>}
  */
-async function push(imageWithTag) {
-  core.info(`Pushing Docker image: ${imageWithTag}`);
+async function createDeterministicTarball(contextDir, dockerfilePath) {
+  const basePath = path.resolve(contextDir);
 
-  await exec.exec("docker", ["push", imageWithTag]);
+  if (!fs.existsSync(basePath)) {
+    throw new Error(`Context directory not found: ${contextDir}`);
+  }
 
-  core.info(`Successfully pushed ${imageWithTag}`);
+  const dockerfileFullPath = path.join(basePath, dockerfilePath);
+  if (!fs.existsSync(dockerfileFullPath)) {
+    throw new Error(`Dockerfile not found: ${dockerfileFullPath}`);
+  }
+
+  const exclusions = getExclusions(basePath);
+  const files = collectFiles(basePath, basePath, exclusions);
+
+  // Sort by relative path for determinism
+  files.sort((a, b) => a.arcName.localeCompare(b.arcName));
+
+  // Create tar
+  const pack = tar.pack();
+  const chunks = [];
+
+  const tarPromise = new Promise((resolve, reject) => {
+    pack.on("data", (chunk) => chunks.push(chunk));
+    pack.on("end", () => resolve(Buffer.concat(chunks)));
+    pack.on("error", reject);
+  });
+
+  let totalSize = 0;
+  for (const file of files) {
+    const content = fs.readFileSync(file.fullPath);
+    const stat = fs.statSync(file.fullPath);
+    const isExecutable = (stat.mode & 0o111) !== 0;
+
+    pack.entry(
+      {
+        name: file.arcName,
+        size: content.length,
+        mtime: new Date(0),
+        uid: 0,
+        gid: 0,
+        uname: "",
+        gname: "",
+        mode: isExecutable ? 0o755 : 0o644,
+      },
+      content
+    );
+
+    totalSize += content.length;
+  }
+
+  pack.finalize();
+  const tarBuffer = await tarPromise;
+
+  // Check size limit
+  if (totalSize > MAX_CONTEXT_SIZE) {
+    const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+    throw new Error(
+      `Build context too large: ${sizeMB}MB (max ${MAX_CONTEXT_SIZE / (1024 * 1024)}MB)`
+    );
+  }
+
+  // Gzip and zero out the mtime field (bytes 4-7) for determinism
+  const gzipped = zlib.gzipSync(tarBuffer);
+  gzipped[4] = gzipped[5] = gzipped[6] = gzipped[7] = 0;
+
+  // Compute MD5 hash (first 16 hex chars to match server-side)
+  const contextHash = crypto.createHash("md5").update(gzipped).digest("hex").substring(0, 16);
+
+  core.info(
+    `Build context: ${files.length} files, ${formatSize(gzipped.length)} compressed, hash=${contextHash}`
+  );
+
+  return { tarball: gzipped, contextHash, fileCount: files.length, totalSize };
 }
 
-module.exports = { TARGET_PLATFORM, parseRegistry, setupQEMU, login, build, push };
+/**
+ * Upload tarball to S3 using a presigned POST URL.
+ *
+ * @param {Buffer} tarball - Compressed tarball
+ * @param {string} uploadUrl - Presigned S3 URL
+ * @param {object} uploadFields - Fields for multipart form upload
+ * @returns {Promise<void>}
+ */
+async function uploadToS3(tarball, uploadUrl, uploadFields) {
+  const formData = new FormData();
+
+  // Add all presigned fields first (order matters for S3)
+  for (const [key, value] of Object.entries(uploadFields)) {
+    formData.append(key, value);
+  }
+
+  // Add Content-Type field if not already present
+  if (!uploadFields["Content-Type"]) {
+    formData.append("Content-Type", "application/gzip");
+  }
+
+  // Add file last (must be named "file" for S3 presigned POST)
+  formData.append("file", new Blob([tarball], { type: "application/gzip" }), "context.tar.gz");
+
+  const response = await fetch(uploadUrl, { method: "POST", body: formData });
+
+  if (!response.ok && response.status !== 204) {
+    const body = await response.text();
+    throw new Error(`Upload failed: HTTP ${response.status} - ${body}`);
+  }
+}
+
+/**
+ * Format byte size as human-readable string.
+ */
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+module.exports = {
+  createDeterministicTarball,
+  uploadToS3,
+  formatSize,
+  DEFAULT_EXCLUSIONS,
+};
 
 
 /***/ }),
@@ -27907,27 +31120,25 @@ var __webpack_exports__ = {};
 
 const core = __nccwpck_require__(7484);
 const { PipecatCloudAPI, removeEmptyValues } = __nccwpck_require__(8793);
-const docker = __nccwpck_require__(1417);
+const { createDeterministicTarball, uploadToS3, formatSize } = __nccwpck_require__(9501);
 
 async function run() {
   try {
     // ── Required inputs ────────────────────────────────────────────────
     const apiKey = core.getInput("api-key", { required: true });
     const agentName = core.getInput("agent-name", { required: true });
-    const image = core.getInput("image", { required: true });
-
-    // ── Docker build inputs ────────────────────────────────────────────
-    const buildEnabled = core.getBooleanInput("build");
-    const registryUsername = core.getInput("registry-username");
-    const registryPassword = core.getInput("registry-password");
-    const tag =
-      core.getInput("tag") || process.env.GITHUB_SHA || "latest";
+    // ── Cloud build inputs ─────────────────────────────────────────────
+    const cloudBuildEnabled = core.getBooleanInput("cloud-build");
+    const buildContext = core.getInput("build-context");
     const dockerfile = core.getInput("dockerfile");
-    const dockerContext = core.getInput("docker-context");
-    const dockerBuildArgs = core.getInput("docker-build-args");
+    let buildId = core.getInput("build-id");
+    const buildTimeout = parseInt(core.getInput("build-timeout"), 10) || 600;
+
+    // ── Pre-built image inputs ─────────────────────────────────────────
+    const image = core.getInput("image");
+    const imageCredentials = core.getInput("image-credentials");
 
     // ── Deploy inputs ──────────────────────────────────────────────────
-    const imageCredentials = core.getInput("image-credentials");
     const secretSet = core.getInput("secret-set");
     const region = core.getInput("region");
     const minAgents = parseInt(core.getInput("min-agents"), 10);
@@ -27938,51 +31149,105 @@ async function run() {
     const waitTimeout = parseInt(core.getInput("wait-timeout"), 10);
     const apiUrl = core.getInput("api-url");
 
-    // ── Resolve the deploy image reference ─────────────────────────────
-    let deployImage;
+    // ── Validate inputs ────────────────────────────────────────────────
+    const usingCloudBuild = cloudBuildEnabled || !!buildId;
 
-    if (buildEnabled) {
-      // Build, tag, and push the Docker image
-      const imageWithTag = `${image}:${tag}`;
-
-      core.startGroup("Docker Build & Push");
-
-      // Ensure arm64 images can be built on this runner
-      await docker.setupQEMU();
-
-      // Login to registry if credentials are provided
-      if (registryUsername && registryPassword) {
-        const registry = docker.parseRegistry(image);
-        await docker.login(registry, registryUsername, registryPassword);
-      } else {
-        core.info("No registry credentials provided, skipping docker login");
-      }
-
-      // Build the image (always targets linux/arm64 for Pipecat Cloud)
-      await docker.build(imageWithTag, dockerfile, dockerContext, dockerBuildArgs);
-
-      // Push the image
-      await docker.push(imageWithTag);
-
-      core.endGroup();
-
-      deployImage = imageWithTag;
-    } else {
-      // When build is disabled, the image input must already include a tag
-      if (!image.includes(":")) {
-        throw new Error(
-          'The "image" input must include a tag (e.g. my-image:v1.0) when "build" is not enabled. ' +
-            'Either set build: true or provide a tagged image.'
-        );
-      }
-      deployImage = image;
+    if (!usingCloudBuild && !image) {
+      throw new Error(
+        'Either "cloud-build: true", "build-id", or "image" must be provided.'
+      );
     }
 
-    core.info(`Deploy image: ${deployImage}`);
+    if (image && !image.includes(":")) {
+      throw new Error(
+        'The "image" input must include a tag (e.g. my-image:v1.0).'
+      );
+    }
 
-    // ── Deploy to Pipecat Cloud ────────────────────────────────────────
+    // ── Initialize API client ──────────────────────────────────────────
     const api = new PipecatCloudAPI(apiUrl, apiKey);
 
+    // ── Cloud Build ────────────────────────────────────────────────────
+    if (cloudBuildEnabled && !buildId) {
+      core.startGroup("Pipecat Cloud Build");
+
+      // Create deterministic tarball
+      core.info("Creating build context...");
+      const buildCtx = await createDeterministicTarball(buildContext, dockerfile);
+
+      // Check cache
+      core.info("Checking build cache...");
+      try {
+        const cachedBuilds = await api.buildList({
+          contextHash: buildCtx.contextHash,
+          region: region || undefined,
+          status: "success",
+          limit: 1,
+        });
+
+        if (cachedBuilds?.builds?.length > 0) {
+          buildId = cachedBuilds.builds[0].id;
+          core.info(`Cache hit! Reusing build: ${buildId}`);
+          core.endGroup();
+        }
+      } catch (e) {
+        core.debug(`Cache check failed (non-fatal): ${e.message}`);
+      }
+
+      if (!buildId) {
+        // Get presigned upload URL
+        core.info("Requesting upload URL...");
+        const uploadData = await api.buildUploadUrl(region);
+
+        // Upload context to S3
+        core.info(`Uploading build context (${formatSize(buildCtx.tarball.length)})...`);
+        await uploadToS3(
+          buildCtx.tarball,
+          uploadData.uploadUrl,
+          uploadData.uploadFields
+        );
+        core.info("Upload complete");
+
+        // Create build
+        core.info("Starting cloud build...");
+        const buildResult = await api.buildCreate(
+          uploadData.uploadId,
+          region,
+          dockerfile
+        );
+
+        const buildData = buildResult.build || buildResult;
+        buildId = buildData.id;
+
+        // Check for server-side cache hit
+        if (buildResult.cached) {
+          core.info(`Server cache hit! Build ID: ${buildId}`);
+        } else {
+          core.info(`Build started: ${buildId}`);
+
+          // Poll for completion
+          const { success, build: finalBuild } = await api.pollBuildStatus(
+            buildId,
+            buildTimeout
+          );
+
+          if (!success) {
+            const errorMsg =
+              finalBuild.errorMessage || finalBuild.error || "Unknown error";
+            throw new Error(`Cloud build failed: ${errorMsg}`);
+          }
+
+          const duration = finalBuild.buildDurationSeconds;
+          core.info(
+            `Build complete${duration ? ` (${duration}s)` : ""}: ${buildId}`
+          );
+        }
+
+        core.endGroup();
+      }
+    }
+
+    // ── Deploy to Pipecat Cloud ────────────────────────────────────────
     core.startGroup("Deploy to Pipecat Cloud");
 
     // Check if agent already exists
@@ -27999,8 +31264,10 @@ async function run() {
     // Build the deployment payload
     const payload = removeEmptyValues({
       serviceName: agentName,
-      image: deployImage,
-      imagePullSecretSet: imageCredentials || undefined,
+      // Use buildId for cloud builds, image for pre-built
+      ...(buildId
+        ? { buildId }
+        : { image, imagePullSecretSet: imageCredentials || undefined }),
       secretSet: secretSet || undefined,
       region: region || undefined,
       autoScaling: {
@@ -28030,10 +31297,12 @@ async function run() {
     }
 
     // ── Set outputs ────────────────────────────────────────────────────
-    core.setOutput("image", deployImage);
+    if (buildId) {
+      core.setOutput("build-id", buildId);
+    }
     core.setOutput("service-name", agentName);
 
-    core.info(`Deployment complete! Agent "${agentName}" deployed with image ${deployImage}`);
+    core.info(`Deployment complete! Agent "${agentName}" deployed${buildId ? ` with build ${buildId}` : ` with image ${image}`}`);
   } catch (error) {
     core.setFailed(error.message);
   }

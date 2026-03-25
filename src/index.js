@@ -3,27 +3,25 @@
 
 const core = require("@actions/core");
 const { PipecatCloudAPI, removeEmptyValues } = require("./api");
-const docker = require("./docker");
+const { createDeterministicTarball, uploadToS3, formatSize } = require("./build");
 
 async function run() {
   try {
     // ── Required inputs ────────────────────────────────────────────────
     const apiKey = core.getInput("api-key", { required: true });
     const agentName = core.getInput("agent-name", { required: true });
-    const image = core.getInput("image", { required: true });
-
-    // ── Docker build inputs ────────────────────────────────────────────
-    const buildEnabled = core.getBooleanInput("build");
-    const registryUsername = core.getInput("registry-username");
-    const registryPassword = core.getInput("registry-password");
-    const tag =
-      core.getInput("tag") || process.env.GITHUB_SHA || "latest";
+    // ── Cloud build inputs ─────────────────────────────────────────────
+    const cloudBuildEnabled = core.getBooleanInput("cloud-build");
+    const buildContext = core.getInput("build-context");
     const dockerfile = core.getInput("dockerfile");
-    const dockerContext = core.getInput("docker-context");
-    const dockerBuildArgs = core.getInput("docker-build-args");
+    let buildId = core.getInput("build-id");
+    const buildTimeout = parseInt(core.getInput("build-timeout"), 10) || 600;
+
+    // ── Pre-built image inputs ─────────────────────────────────────────
+    const image = core.getInput("image");
+    const imageCredentials = core.getInput("image-credentials");
 
     // ── Deploy inputs ──────────────────────────────────────────────────
-    const imageCredentials = core.getInput("image-credentials");
     const secretSet = core.getInput("secret-set");
     const region = core.getInput("region");
     const minAgents = parseInt(core.getInput("min-agents"), 10);
@@ -34,51 +32,105 @@ async function run() {
     const waitTimeout = parseInt(core.getInput("wait-timeout"), 10);
     const apiUrl = core.getInput("api-url");
 
-    // ── Resolve the deploy image reference ─────────────────────────────
-    let deployImage;
+    // ── Validate inputs ────────────────────────────────────────────────
+    const usingCloudBuild = cloudBuildEnabled || !!buildId;
 
-    if (buildEnabled) {
-      // Build, tag, and push the Docker image
-      const imageWithTag = `${image}:${tag}`;
-
-      core.startGroup("Docker Build & Push");
-
-      // Ensure arm64 images can be built on this runner
-      await docker.setupQEMU();
-
-      // Login to registry if credentials are provided
-      if (registryUsername && registryPassword) {
-        const registry = docker.parseRegistry(image);
-        await docker.login(registry, registryUsername, registryPassword);
-      } else {
-        core.info("No registry credentials provided, skipping docker login");
-      }
-
-      // Build the image (always targets linux/arm64 for Pipecat Cloud)
-      await docker.build(imageWithTag, dockerfile, dockerContext, dockerBuildArgs);
-
-      // Push the image
-      await docker.push(imageWithTag);
-
-      core.endGroup();
-
-      deployImage = imageWithTag;
-    } else {
-      // When build is disabled, the image input must already include a tag
-      if (!image.includes(":")) {
-        throw new Error(
-          'The "image" input must include a tag (e.g. my-image:v1.0) when "build" is not enabled. ' +
-            'Either set build: true or provide a tagged image.'
-        );
-      }
-      deployImage = image;
+    if (!usingCloudBuild && !image) {
+      throw new Error(
+        'Either "cloud-build: true", "build-id", or "image" must be provided.'
+      );
     }
 
-    core.info(`Deploy image: ${deployImage}`);
+    if (image && !image.includes(":")) {
+      throw new Error(
+        'The "image" input must include a tag (e.g. my-image:v1.0).'
+      );
+    }
 
-    // ── Deploy to Pipecat Cloud ────────────────────────────────────────
+    // ── Initialize API client ──────────────────────────────────────────
     const api = new PipecatCloudAPI(apiUrl, apiKey);
 
+    // ── Cloud Build ────────────────────────────────────────────────────
+    if (cloudBuildEnabled && !buildId) {
+      core.startGroup("Pipecat Cloud Build");
+
+      // Create deterministic tarball
+      core.info("Creating build context...");
+      const buildCtx = await createDeterministicTarball(buildContext, dockerfile);
+
+      // Check cache
+      core.info("Checking build cache...");
+      try {
+        const cachedBuilds = await api.buildList({
+          contextHash: buildCtx.contextHash,
+          region: region || undefined,
+          status: "success",
+          limit: 1,
+        });
+
+        if (cachedBuilds?.builds?.length > 0) {
+          buildId = cachedBuilds.builds[0].id;
+          core.info(`Cache hit! Reusing build: ${buildId}`);
+          core.endGroup();
+        }
+      } catch (e) {
+        core.debug(`Cache check failed (non-fatal): ${e.message}`);
+      }
+
+      if (!buildId) {
+        // Get presigned upload URL
+        core.info("Requesting upload URL...");
+        const uploadData = await api.buildUploadUrl(region);
+
+        // Upload context to S3
+        core.info(`Uploading build context (${formatSize(buildCtx.tarball.length)})...`);
+        await uploadToS3(
+          buildCtx.tarball,
+          uploadData.uploadUrl,
+          uploadData.uploadFields
+        );
+        core.info("Upload complete");
+
+        // Create build
+        core.info("Starting cloud build...");
+        const buildResult = await api.buildCreate(
+          uploadData.uploadId,
+          region,
+          dockerfile
+        );
+
+        const buildData = buildResult.build || buildResult;
+        buildId = buildData.id;
+
+        // Check for server-side cache hit
+        if (buildResult.cached) {
+          core.info(`Server cache hit! Build ID: ${buildId}`);
+        } else {
+          core.info(`Build started: ${buildId}`);
+
+          // Poll for completion
+          const { success, build: finalBuild } = await api.pollBuildStatus(
+            buildId,
+            buildTimeout
+          );
+
+          if (!success) {
+            const errorMsg =
+              finalBuild.errorMessage || finalBuild.error || "Unknown error";
+            throw new Error(`Cloud build failed: ${errorMsg}`);
+          }
+
+          const duration = finalBuild.buildDurationSeconds;
+          core.info(
+            `Build complete${duration ? ` (${duration}s)` : ""}: ${buildId}`
+          );
+        }
+
+        core.endGroup();
+      }
+    }
+
+    // ── Deploy to Pipecat Cloud ────────────────────────────────────────
     core.startGroup("Deploy to Pipecat Cloud");
 
     // Check if agent already exists
@@ -95,8 +147,10 @@ async function run() {
     // Build the deployment payload
     const payload = removeEmptyValues({
       serviceName: agentName,
-      image: deployImage,
-      imagePullSecretSet: imageCredentials || undefined,
+      // Use buildId for cloud builds, image for pre-built
+      ...(buildId
+        ? { buildId }
+        : { image, imagePullSecretSet: imageCredentials || undefined }),
       secretSet: secretSet || undefined,
       region: region || undefined,
       autoScaling: {
@@ -126,10 +180,12 @@ async function run() {
     }
 
     // ── Set outputs ────────────────────────────────────────────────────
-    core.setOutput("image", deployImage);
+    if (buildId) {
+      core.setOutput("build-id", buildId);
+    }
     core.setOutput("service-name", agentName);
 
-    core.info(`Deployment complete! Agent "${agentName}" deployed with image ${deployImage}`);
+    core.info(`Deployment complete! Agent "${agentName}" deployed${buildId ? ` with build ${buildId}` : ` with image ${image}`}`);
   } catch (error) {
     core.setFailed(error.message);
   }
