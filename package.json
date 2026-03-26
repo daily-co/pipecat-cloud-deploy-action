@@ -1,7 +1,7 @@
 {
   "name": "pipecat-cloud-deploy-action",
   "version": "1.0.0",
-  "description": "GitHub Action to build, push, and deploy to Pipecat Cloud",
+  "description": "GitHub Action to build and deploy to Pipecat Cloud",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.js -o dist --license licenses.txt"
@@ -21,8 +21,8 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@actions/exec": "^1.1.1",
-    "@actions/http-client": "^2.2.3"
+    "@actions/http-client": "^2.2.3",
+    "tar-stream": "^3.1.7"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.3"

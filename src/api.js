@@ -41,7 +41,6 @@ class PipecatCloudAPI {
 
   /**
    * Extract an error message from an API response.
-   * The Pipecat Cloud API returns errors as { error: "...", code: "..." }.
    * @param {object} result - Parsed response body
    * @param {number} statusCode - HTTP status code
    * @returns {string}
@@ -49,6 +48,8 @@ class PipecatCloudAPI {
   _errorMessage(result, statusCode) {
     return result?.error || result?.message || `HTTP ${statusCode}`;
   }
+
+  // ── Agent endpoints ────────────────────────────────────────────────
 
   /**
    * Check if an agent already exists.
@@ -163,6 +164,177 @@ class PipecatCloudAPI {
     throw new Error(
       `Deployment did not become ready within ${timeoutSeconds} seconds`
     );
+  }
+
+  // ── Build endpoints ────────────────────────────────────────────────
+
+  /**
+   * Get a presigned URL for uploading build context.
+   * @param {string} [region] - Target region for the build
+   * @returns {{ uploadId: string, uploadUrl: string, uploadFields: object, expiresAt: string }}
+   */
+  async buildUploadUrl(region) {
+    const url = `${this.apiUrl}/v1/builds/upload-url`;
+    const payload = {};
+    if (region) payload.region = region;
+
+    core.debug(`POST ${url}`);
+    const response = await this.client.post(url, JSON.stringify(payload));
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to get upload URL: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Create a new build from uploaded context.
+   * @param {string} uploadId - ID from upload URL response
+   * @param {string} [region] - Target region
+   * @param {string} [dockerfilePath] - Dockerfile path within context
+   * @returns {{ build: object, cached?: boolean }}
+   */
+  async buildCreate(uploadId, region, dockerfilePath) {
+    const url = `${this.apiUrl}/v1/builds`;
+    const payload = {
+      uploadId,
+      dockerfilePath: dockerfilePath || "Dockerfile",
+    };
+    if (region) payload.region = region;
+
+    core.debug(`POST ${url}`);
+    const response = await this.client.post(url, JSON.stringify(payload));
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to create build: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Get build status by ID.
+   * @param {string} buildId - Build ID
+   * @returns {object} Build data
+   */
+  async buildGet(buildId) {
+    const url = `${this.apiUrl}/v1/builds/${encodeURIComponent(buildId)}`;
+    core.debug(`GET ${url}`);
+
+    const response = await this.client.get(url);
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode === 404) {
+      return null;
+    }
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to get build status: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * List builds with optional filters (used for cache lookup).
+   * @param {object} params - Query parameters
+   * @param {string} [params.contextHash] - Filter by context hash
+   * @param {string} [params.region] - Filter by region
+   * @param {string} [params.status] - Filter by status
+   * @param {number} [params.limit] - Max results
+   * @returns {{ builds: object[], total: number }}
+   */
+  async buildList(params = {}) {
+    const query = new URLSearchParams();
+    if (params.contextHash) query.set("contextHash", params.contextHash);
+    if (params.region) query.set("region", params.region);
+    if (params.status) query.set("status", params.status);
+    if (params.limit) query.set("limit", String(params.limit));
+
+    const url = `${this.apiUrl}/v1/builds?${query.toString()}`;
+    core.debug(`GET ${url}`);
+
+    const response = await this.client.get(url);
+    const { statusCode, result } = await this._parseResponse(response);
+
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(
+        `Failed to list builds: ${this._errorMessage(result, statusCode)}`
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Poll build status until completion or timeout.
+   * Tolerates transient API errors (network blips, 500s) by retrying.
+   * @param {string} buildId - Build ID to poll
+   * @param {number} [maxDuration=600] - Maximum wait time in seconds
+   * @param {number} [pollInterval=5] - Seconds between polls
+   * @returns {{ success: boolean, build: object }}
+   */
+  async pollBuildStatus(buildId, maxDuration = 600, pollInterval = 5) {
+    const startTime = Date.now();
+    const terminalStatuses = new Set(["success", "failed", "timeout"]);
+    const maxConsecutiveErrors = 5;
+    let consecutiveErrors = 0;
+
+    core.info(`Polling build status (timeout: ${maxDuration}s)...`);
+
+    while (true) {
+      const elapsed = (Date.now() - startTime) / 1000;
+      if (elapsed > maxDuration) {
+        return {
+          success: false,
+          build: { status: "timeout", error: "Build polling timeout exceeded" },
+        };
+      }
+
+      await sleep(pollInterval * 1000);
+
+      let data;
+      try {
+        data = await this.buildGet(buildId);
+        consecutiveErrors = 0;
+      } catch (e) {
+        consecutiveErrors++;
+        core.warning(
+          `Build status poll failed (${consecutiveErrors}/${maxConsecutiveErrors}): ${e.message}`
+        );
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          throw new Error(
+            `Build status polling failed after ${maxConsecutiveErrors} consecutive errors: ${e.message}`
+          );
+        }
+        continue;
+      }
+
+      if (!data) {
+        return {
+          success: false,
+          build: { status: "error", error: "Build not found" },
+        };
+      }
+
+      const build = data.build || data;
+      const status = build.status || "unknown";
+
+      core.info(`Build status: ${status} (${Math.round(elapsed)}s elapsed)`);
+
+      if (terminalStatuses.has(status)) {
+        return { success: status === "success", build };
+      }
+    }
   }
 }
 
