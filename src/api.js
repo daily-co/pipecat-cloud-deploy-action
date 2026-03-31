@@ -256,6 +256,7 @@ class PipecatCloudAPI {
   async buildList(params = {}) {
     const query = new URLSearchParams();
     if (params.contextHash) query.set("contextHash", params.contextHash);
+    if (params.dockerfilePath) query.set("dockerfilePath", params.dockerfilePath);
     if (params.region) query.set("region", params.region);
     if (params.status) query.set("status", params.status);
     if (params.limit) query.set("limit", String(params.limit));

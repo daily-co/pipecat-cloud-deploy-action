@@ -77,6 +77,7 @@ async function run() {
         try {
           const cachedBuilds = await api.buildList({
             contextHash: buildCtx.contextHash,
+            dockerfilePath: dockerfile,
             region: region || undefined,
             status: "success",
             limit: 1,
