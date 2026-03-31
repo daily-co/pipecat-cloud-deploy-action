@@ -262,8 +262,15 @@ async function createDeterministicTarball(contextDir, dockerfilePath) {
   const gzipped = zlib.gzipSync(tarBuffer);
   gzipped[4] = gzipped[5] = gzipped[6] = gzipped[7] = 0;
 
-  // Compute MD5 hash (first 16 hex chars to match server-side)
-  const contextHash = crypto.createHash("md5").update(gzipped).digest("hex").substring(0, 16);
+  // Compute MD5 hash (first 16 hex chars to match server-side).
+  // Include the Dockerfile path so that identical build contexts with
+  // different Dockerfiles (common in monorepos) produce distinct hashes.
+  const contextHash = crypto
+    .createHash("md5")
+    .update(gzipped)
+    .update(`\0dockerfile:${dockerfilePath}`)
+    .digest("hex")
+    .substring(0, 16);
 
   core.info(
     `Build context: ${files.length} files, ${formatSize(gzipped.length)} compressed, hash=${contextHash}`
