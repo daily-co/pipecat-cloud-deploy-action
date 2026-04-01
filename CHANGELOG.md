@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.0.2...v2.0.3) (2026-04-01)
+
+
+### Bug Fixes
+
+* exclude component name from release-please tags ([#8](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/8)) ([5cb82ad](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/5cb82adf27816faa70f71ef8f5c2a316751b000b))
+
 ## [2.0.2](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/pipecat-cloud-deploy-actionv2.0.1...pipecat-cloud-deploy-actionv2.0.2) (2026-04-01)
 
 
