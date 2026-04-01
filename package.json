@@ -1,6 +1,6 @@
 {
   "name": "pipecat-cloud-deploy-action",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "GitHub Action to build and deploy to Pipecat Cloud",
   "main": "dist/index.js",
   "scripts": {
@@ -25,6 +25,8 @@
     "tar-stream": "^3.1.7"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
     "@vercel/ncc": "^0.38.3"
   }
 }
