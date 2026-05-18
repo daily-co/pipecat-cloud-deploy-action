@@ -67,6 +67,12 @@ inputs:
     description: "Enable managed keys"
     required: false
     default: "false"
+  max-session-duration:
+    description: "Max session duration in seconds. When a session reaches this limit, the agent's connection is forcibly closed."
+    required: false
+  krisp-viva:
+    description: "Enable Krisp VIVA voice isolation by specifying an audio filter model (e.g. 'tel' or 'pro'). Omit to disable."
+    required: false
   wait-for-ready:
     description: "Whether to poll until deployment is ready"
     required: false
