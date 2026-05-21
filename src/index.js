@@ -30,6 +30,8 @@ async function run() {
     const maxAgents = parseInt(core.getInput("max-agents"), 10);
     const agentProfile = core.getInput("agent-profile");
     const enableManagedKeys = core.getBooleanInput("enable-managed-keys");
+    const maxSessionDuration = parseInt(core.getInput("max-session-duration"), 10);
+    const krispViva = core.getInput("krisp-viva");
     const waitForReady = core.getBooleanInput("wait-for-ready");
     const waitTimeout = parseInt(core.getInput("wait-timeout"), 10);
     const apiUrl = core.getInput("api-url");
@@ -174,6 +176,8 @@ async function run() {
         },
         enableIntegratedKeysProxy: enableManagedKeys || undefined,
         agentProfile: agentProfile || undefined,
+        maxSessionDuration: isNaN(maxSessionDuration) ? undefined : maxSessionDuration,
+        krispViva: krispViva ? { audioFilter: krispViva } : undefined,
       });
 
       // Deploy

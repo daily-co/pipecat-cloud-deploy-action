@@ -105,6 +105,8 @@ If you already have a build ID from a previous run or the `pcc` CLI:
 | `max-agents`          | `10`                           | Maximum concurrent agents (1-50).                            |
 | `agent-profile`       |                                | Agent profile name.                                          |
 | `enable-managed-keys` | `false`                        | Enable managed keys.                                         |
+| `max-session-duration`|                                | Max session duration in seconds. When a session reaches this limit, the agent's connection is forcibly closed. |
+| `krisp-viva`          |                                | Enable [Krisp VIVA](https://docs.pipecat.ai/deployment/pipecat-cloud/guides/krisp-viva) voice isolation by specifying an audio filter model (e.g. `tel` or `pro`). |
 | `wait-for-ready`      | `true`                         | Poll until the deployment is ready.                          |
 | `wait-timeout`        | `90`                           | Max seconds to wait for deployment readiness.                |
 | `api-url`             | `https://api.pipecat.daily.co` | Override the Pipecat Cloud API base URL.                     |
