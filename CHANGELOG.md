@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.0.3...v2.1.0) (2026-05-21)
+
+
+### Features
+
+* add max-session-duration and krisp-viva inputs ([#13](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/13)) ([96ae51c](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/96ae51c728162f7d9e74f5e5ecb16994272716ad))
+
+
+### Bug Fixes
+
+* resolve fast-uri security vulnerability ([#11](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/11)) ([acc59b9](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/acc59b9048f9f13152b35d495c0e885c8a8140b1))
+
 ## [2.0.3](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.0.2...v2.0.3) (2026-04-26)
 
 
