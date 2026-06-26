@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.1.0...v2.1.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* update @actions/http-client to v4 and resolve undici vulnerabilities ([#16](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/16)) ([9e4bd27](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/9e4bd27fd714254e8559987cd12b00ea4c1fb4a3))
+* update js-yaml to resolve security vulnerability ([#14](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/14)) ([7a44bd7](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/7a44bd71a1dd784e31b9c175209eb27df3d148f0))
+
 ## [2.1.0](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.0.3...v2.1.0) (2026-05-21)
 
 
