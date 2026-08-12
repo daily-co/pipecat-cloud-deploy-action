@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.1.1...v2.1.2) (2026-08-12)
+
+
+### Bug Fixes
+
+* address npm audit vulnerabilities (fast-uri, js-yaml, undici) ([#17](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/17)) ([6e457e0](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/6e457e0bf6d270864415057fb07041d02d53f06a))
+
 ## [2.1.1](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.1.0...v2.1.1) (2026-06-26)
 
 
