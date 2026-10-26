@@ -1,0 +1,41 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Match the runtime in action.yml (runs.using).
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # The end-to-end tests run the freshly built dist/index.js.
+      - name: Test
+        run: npm test
+
+      - name: Check dist is up to date
+        run: |
+          if [ -n "$(git status --porcelain dist)" ]; then
+            echo "::error::dist/ does not match the source and lockfile. Run 'npm ci && npm run build' and commit the result."
+            git status --short dist
+            git diff --stat dist
+            exit 1
+          fi

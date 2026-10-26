@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD 2-Clause License
 // Copyright (c) 2025-2026, Daily
 
-const core = require("@actions/core");
-const { PipecatCloudAPI, removeEmptyValues } = require("./api");
-const { createDeterministicTarball, uploadToS3, formatSize } = require("./build");
+import * as core from "@actions/core";
+import { PipecatCloudAPI, removeEmptyValues } from "./api.js";
+import { createDeterministicTarball, uploadToS3, formatSize } from "./build.js";
 
 async function run() {
   try {

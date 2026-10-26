@@ -175,6 +175,18 @@ If you already have a build ID from a previous run or the `pcc` CLI:
 2. **Add the API key as a GitHub secret** named `PIPECAT_API_KEY` (or any name you prefer) in your repository settings under _Settings > Secrets and variables > Actions_.
 3. **Add the action** to your workflow file (see examples above).
 
+## Development
+
+The action runs the bundled `dist/index.js`, so rebuild and commit `dist/` whenever you change `src/` or dependencies:
+
+```bash
+npm ci
+npm run build
+npm test
+```
+
+Unit tests cover `src/`, and end-to-end tests run the built `dist/index.js` against a mock Pipecat Cloud API. CI fails if `dist/` doesn't match a fresh build.
+
 ## License
 
 BSD 2-Clause License. See [LICENSE](LICENSE) for details.

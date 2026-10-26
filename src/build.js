@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD 2-Clause License
 // Copyright (c) 2025-2026, Daily
 
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
-const zlib = require("zlib");
-const core = require("@actions/core");
-const tar = require("tar-stream");
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import zlib from "zlib";
+import * as core from "@actions/core";
+import tar from "tar-stream";
 
 // Security-sensitive patterns that are always excluded, even when .dockerignore
 // is present. Prevents accidental secret upload to S3.
@@ -320,7 +320,7 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-module.exports = {
+export {
   createDeterministicTarball,
   uploadToS3,
   formatSize,

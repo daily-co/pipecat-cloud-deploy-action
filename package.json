@@ -2,9 +2,11 @@
   "name": "pipecat-cloud-deploy-action",
   "version": "2.1.4",
   "description": "GitHub Action to build and deploy to Pipecat Cloud",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.js -o dist --license licenses.txt"
+    "build": "ncc build src/index.js -o dist --license licenses.txt",
+    "test": "node --test --test-reporter=spec test/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -20,16 +22,16 @@
   "author": "Daily",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.1",
     "@actions/http-client": "^4.0.1",
     "tar-stream": "^3.1.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",
-    "@vercel/ncc": "^0.38.3"
+    "@vercel/ncc": "^0.45.0"
   },
   "overrides": {
-    "undici": ">=6.27.0"
+    "undici": "^6.27.0"
   }
 }

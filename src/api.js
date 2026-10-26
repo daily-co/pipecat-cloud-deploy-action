@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD 2-Clause License
 // Copyright (c) 2025-2026, Daily
 
-const core = require("@actions/core");
-const { HttpClient } = require("@actions/http-client");
+import * as core from "@actions/core";
+import { HttpClient } from "@actions/http-client";
 
 class PipecatCloudAPI {
   /**
@@ -369,4 +369,4 @@ function removeEmptyValues(obj) {
   return cleaned;
 }
 
-module.exports = { PipecatCloudAPI, removeEmptyValues };
+export { PipecatCloudAPI, removeEmptyValues };
