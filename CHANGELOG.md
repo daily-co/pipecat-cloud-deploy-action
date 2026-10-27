@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.5](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.1.4...v2.1.5) (2026-10-27)
+
+
+### Bug Fixes
+
+* address fast-uri vulnerabilities ([#24](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/24)) ([cda8e6c](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/cda8e6c373de5b96a3d933885dcc9fb9ff81f980))
+* migrate to ESM so dependency updates reach dist, add test suite and CI ([#25](https://github.com/daily-co/pipecat-cloud-deploy-action/issues/25)) ([1e40f22](https://github.com/daily-co/pipecat-cloud-deploy-action/commit/1e40f222bb0e8ff8a3337563f392ba76a281093d))
+
 ## [2.1.4](https://github.com/daily-co/pipecat-cloud-deploy-action/compare/v2.1.3...v2.1.4) (2026-10-05)
 
 
