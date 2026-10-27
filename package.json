@@ -1,6 +1,6 @@
 {
   "name": "pipecat-cloud-deploy-action",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "GitHub Action to build and deploy to Pipecat Cloud",
   "type": "module",
   "main": "dist/index.js",
